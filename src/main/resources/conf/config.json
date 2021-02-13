@@ -1,0 +1,22 @@
+{
+  "port": 8888,
+  "mysql": {
+    "host": "localhost",
+    "port": 3306,
+    "db": "plan_activity",
+    "user": "devel",
+    "password": "i18n",
+    "charset": "utf8",
+    "pool_max": 5
+  },
+  "redis": {
+    "host": "localhost",
+    "port": 6379,
+    "password": "i18n!@#",
+    "db": 0
+  },
+  "wechat": {
+    "appid": "wxdc5430f4d0e16474",
+    "secret": "wxdc5430f4d0e16474"
+  }
+}
