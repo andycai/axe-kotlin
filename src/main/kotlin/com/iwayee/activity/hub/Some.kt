@@ -2,7 +2,9 @@ package com.iwayee.activity.hub
 
 import com.google.common.base.Preconditions.checkArgument
 import com.google.common.base.Strings
+import com.iwayee.activity.cache.UserCache
 import com.iwayee.activity.define.ErrCode
+import com.iwayee.activity.utils.TokenExpiredException
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.http.HttpServerResponse
 import io.vertx.core.json.JsonObject
@@ -17,19 +19,28 @@ class Some(ctx: RoutingContext) {
 
   var userId: Int = 0
     get() {
-      return 0
+      return UserCache.currentId(token)
     }
   var userSex: Int = 0
     get() {
-      return 0
+      return UserCache.currentSex(token)
     }
   var token: String = ""
     get() {
-      return ""
+      var param = getJson()
+      var token = param.getString("token")
+      checkArgument(!Strings.isNullOrEmpty(token))
+      return token
     }
 
   fun getIP(): String {
     return ctx.request().remoteAddress().hostAddress()
+  }
+
+  fun checkToken() {
+    if (UserCache.expired(token)) {
+      throw TokenExpiredException("Login session has expired!")
+    }
   }
 
   fun json(json: Any) {
