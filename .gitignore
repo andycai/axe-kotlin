@@ -1,3 +1,6 @@
 
 .DS_Store
 activity.iml
+target
+.idea
+.mvn
