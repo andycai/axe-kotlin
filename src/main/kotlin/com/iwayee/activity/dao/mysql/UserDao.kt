@@ -46,13 +46,13 @@ object UserDao: MyDao() {
   fun getUserByID(id: Int, action: (JsonObject?) -> Unit) {
     var fields = "id,username,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups,create_at";
     var sql = "SELECT $fields FROM `user` WHERE id = ?"
-    client?.connection?.onSuccess{conn ->
-      conn.preparedQuery(sql)
-        .execute(Tuple.of(id))
-        .onComplete{ ar ->
-          if (ar.succeeded()) {
-            var rows = ar.result()
-            if (rows.size() > 0) {
+    client?.connection?.let {
+      it.onSuccess { conn ->
+        conn.preparedQuery(sql)
+          .execute(Tuple.of(id))
+          .onComplete{ ar ->
+            if (ar.succeeded()) {
+              var rows = ar.result()
               var jo = JsonObject()
               for (row in rows) {
                 jo = row.toJson()
@@ -62,26 +62,26 @@ object UserDao: MyDao() {
               println("Failure: ${ar.cause().message}")
               action(null)
             }
+            conn.close()
           }
-          conn.close()
-        }
-        .onFailure{ ar ->
-          action(null)
-          ar.printStackTrace()
-        }
+          .onFailure{ ar ->
+            action(null)
+            ar.printStackTrace()
+          }
+      }
     }
   }
 
   fun getUserByName(username: String, action: (JsonObject?) -> Unit) {
     var fields = "id,username,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups,create_at";
     var sql = "SELECT $fields FROM `user` WHERE username = ?"
-    client?.connection?.onSuccess{conn ->
-      conn.preparedQuery(sql)
-        .execute(Tuple.of(username))
-        .onComplete{ ar ->
-          if (ar.succeeded()) {
-            var rows = ar.result()
-            if (rows.size() > 0) {
+    client?.connection?.let {
+      it.onSuccess { conn ->
+        conn.preparedQuery(sql)
+          .execute(Tuple.of(username))
+          .onComplete { ar ->
+            if (ar.succeeded()) {
+              var rows = ar.result()
               var jo = JsonObject()
               for (row in rows) {
                 jo = row.toJson()
@@ -91,13 +91,13 @@ object UserDao: MyDao() {
               println("Failure: ${ar.cause().message}")
               action(null)
             }
+            conn.close()
           }
-          conn.close()
-        }
-        .onFailure{ ar ->
-          action(null)
-          ar.printStackTrace()
-        }
+          .onFailure { ar ->
+            action(null)
+            ar.printStackTrace()
+          }
+      }
     }
   }
 

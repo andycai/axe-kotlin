@@ -83,25 +83,14 @@ class MainVerticle: AbstractVerticle() {
 
     get("/users/:uid", UserSystem::getUser)
 
-    vertx
-      .createHttpServer()
-      .requestHandler(router)
-      .listen(8888)
-      .onSuccess{ server ->
-        println("HTTP server started on port ${server.actualPort()}")
-      }
-//      .requestHandler { req ->
-//        req.response()
-//          .putHeader("content-type", "text/plain")
-//          .end("Hello from Vert.x!")
-//      }
-//      .listen(8888) { http ->
-//        if (http.succeeded()) {
-//          startPromise.complete()
-//          println("HTTP server started on port 8888")
-//        } else {
-//          startPromise.fail(http.cause());
-//        }
-//      }
+    Hub.config?.let {
+      vertx
+        .createHttpServer()
+        .requestHandler(router)
+        .listen(it.port)
+        .onSuccess{ server ->
+          println("HTTP server started on port ${server.actualPort()}")
+        }
+    }
   }
 }

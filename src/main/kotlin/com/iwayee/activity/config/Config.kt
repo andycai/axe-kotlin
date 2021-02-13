@@ -4,8 +4,8 @@ import io.vertx.core.json.JsonObject
 
 class Config {
   var port: Int = 8888
-  var mysql: MySQL = MySQL()
-  var redis: Redis = Redis()
+  var mysql: MySQL? = null
+  var redis: Redis? = null
 
   fun fromJson(jo: JsonObject) {
     port = jo.getInteger("port")
