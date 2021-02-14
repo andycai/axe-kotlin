@@ -1,5 +1,7 @@
 package com.iwayee.activity.verticles
 
+import com.iwayee.activity.api.system.ActivitySystem
+import com.iwayee.activity.api.system.GroupSystem
 import com.iwayee.activity.api.system.UserSystem
 import com.iwayee.activity.define.ErrCode
 import com.iwayee.activity.hub.Hub
@@ -79,9 +81,40 @@ class MainVerticle: AbstractVerticle() {
     router = Router.router(vertx)
     router?.route()?.handler(BodyHandler.create())
 
-    router?.get("/login")?.handler(UserSystem::login)
+    // 用户
+    get("/users/:uid", UserSystem::getUser);
+    get("/users/your/groups", GroupSystem::getGroupsByUserId);
+    get("/users/your/activities", ActivitySystem::getActivitiesByUserId);
 
-    get("/users/:uid", UserSystem::getUser)
+    post("/login", UserSystem::login, false);
+    post("/login_wx", UserSystem::wxLogin, false);
+    post("/register", UserSystem::register, false);
+    post("/logout", UserSystem::logout);
+
+    // 群组
+    get("/groups/:gid", GroupSystem::getGroupById);
+    get("/groups", GroupSystem::getGroups);
+    get("/groups/:gid/pending", GroupSystem::getApplyList);
+    get("/groups/:gid/activities", ActivitySystem::getActivitiesByGroupId);
+
+    post("/groups", GroupSystem::create);
+    post("/groups/:gid/apply", GroupSystem::apply);
+    post("/groups/:gid/approve", GroupSystem::approve);
+    post("/groups/:gid/promote/:mid", GroupSystem::promote);
+    post("/groups/:gid/transfer/:mid", GroupSystem::transfer);
+
+    put("/groups/:gid", GroupSystem::updateGroup);
+
+    // 活动
+    get("/activities/:aid", ActivitySystem::getActivityById);
+    get("/activities", ActivitySystem::getActivities);
+
+    post("/activities", ActivitySystem::create);
+    post("/activities/:aid/end", ActivitySystem::endActivity);
+    post("/activities/:aid/apply", ActivitySystem::applyActivity);
+    post("/activities/:aid/cancel", ActivitySystem::cancelActivity);
+
+    put("/activities/:aid", ActivitySystem::update);
 
     Hub.config?.let {
       vertx

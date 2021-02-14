@@ -44,7 +44,7 @@ object UserDao : MyDao() {
     }
   }
 
-  fun getUserByID(id: Int, action: (JsonObject?) -> Unit) {
+  fun getUserById(id: Int, action: (JsonObject?) -> Unit) {
     var fields = "id,username,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups,create_at";
     var sql = "SELECT $fields FROM `user` WHERE id = ?"
 

@@ -34,7 +34,7 @@ object GroupDao : MyDao() {
     }
   }
 
-  fun getGroupByID(id: Int, action: (JsonObject?) -> Unit) {
+  fun getGroupById(id: Int, action: (JsonObject?) -> Unit) {
     var fields = "`id`, `level`,`name`,`logo`,`members`, `pending`,`notice`,`addr`,`activities`";
     var sql = "SELECT $fields FROM `group` WHERE id = ?"
 

@@ -43,7 +43,7 @@ object ActivityDao : MyDao() {
     }
   }
 
-  fun getActivityByID(id: Int, action: (JsonObject?) -> Unit) {
+  fun getActivityById(id: Int, action: (JsonObject?) -> Unit) {
     var fields = "`id`,`planner`,`group_id`,`kind`,`type`,`quota`,`title`,`remark`,`status`,`fee_type`,`fee_male`,`fee_female`,`queue`,`queue_sex`,`addr`,`ahead`,`begin_at`,`end_at`";
     var sql = "SELECT $fields FROM `activity` WHERE id = ?"
 
@@ -106,27 +106,35 @@ object ActivityDao : MyDao() {
     }
   }
 
-  fun updateGroupById(id: Int, group: JsonObject, action: (Boolean) -> Unit) {
-    val fields = ("level = ?, "
-            + "name = ?, "
-            + "logo = ?, "
-            + "notice = ?, "
-            + "addr = ?, "
-            + "members = ?, "
-            + "pending = ?, "
-            + "activities = ?")
-    var sql = "UPDATE `group` SET $fields WHERE id = ?"
+  fun updateActivityById(id: Int, activity: JsonObject, action: (Boolean) -> Unit) {
+    val fields = ("quota = ?, "
+            + "title = ?, "
+            + "remark = ?, "
+            + "status = ?, "
+            + "ahead = ?, "
+            + "queue = ?, "
+            + "queue_sex = ?, "
+            + "fee_male = ?, "
+            + "fee_female = ?, "
+            + "begin_at = ?, "
+            + "end_at = ?, "
+            + "addr = ?")
+    var sql = "UPDATE `activity` SET $fields WHERE `id` = ?"
 
     client?.let {
       it.preparedQuery(sql).execute(Tuple.of(
-              group.getInteger("level"),
-              group.getString("name"),
-              group.getString("logo"),
-              group.getString("notice"),
-              group.getString("addr"),
-              group.getJsonArray("members").encode(),
-              group.getJsonArray("pending").encode(),
-              group.getJsonArray("activities").encode(),
+              activity.getInteger("quota"),
+              activity.getString("title"),
+              activity.getString("remark"),
+              activity.getInteger("status"),
+              activity.getInteger("ahead"),
+              activity.getJsonArray("queue").encode(),
+              activity.getJsonArray("queue_sex").encode(),
+              activity.getInteger("fee_male"),
+              activity.getInteger("fee_female"),
+              activity.getString("begin_at"),
+              activity.getString("end_at"),
+              activity.getString("addr"),
               id
       )) { ar ->
         var ret = false

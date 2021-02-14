@@ -1,4 +1,111 @@
 package com.iwayee.activity.cache
 
-object ActivityCache {
+import com.iwayee.activity.api.comp.Activity
+import com.iwayee.activity.dao.mysql.ActivityDao
+import io.vertx.core.json.JsonArray
+import io.vertx.core.json.JsonObject
+
+object ActivityCache : BaseCache() {
+  private var activities = mutableMapOf<Int, Activity>()
+
+  private fun cache(activity: Activity) {
+    activity?.let {
+      activities[it.id] = it
+    }
+  }
+
+  fun create(jo: JsonObject, uid: Int, action: (Long) -> Unit) {
+    ActivityDao.create(jo) { newId ->
+      if (newId > 0L) {
+        var activity = jo.mapTo(Activity::class.java)
+        activity.id = newId.toInt()
+        cache(activity)
+      }
+      action(newId)
+    }
+  }
+
+  fun getActivityById(id: Int, action: (Activity?) -> Unit) {
+    if (activities.containsKey(id)) {
+      println("获取活动数据（缓存）: $id")
+      action(activities[id])
+    } else {
+      println("获取活动数据（DB)：$id")
+      ActivityDao.getActivityById(id) {
+        it?.let {
+          var activity = it.mapTo(Activity::class.java)
+          cache(activity)
+          action(activity)
+          return@getActivityById
+        }
+        action(null)
+      }
+    }
+  }
+
+  fun getActivitiesByIds(ids: List<Int>, action: (JsonArray) -> Unit) {
+    var jr = JsonArray()
+    var idsForDB = mutableListOf<Int>()
+    if (ids.isEmpty()) {
+      action(jr)
+      return
+    }
+
+    for (id in ids) {
+      if (jr.contains(id)) {
+        continue
+      }
+      if (activities.containsKey(id)) {
+        activities[id]?.let {
+          jr.add(it)
+        }
+      } else {
+        idsForDB.add(id)
+      }
+    }
+
+    println("获取活动数据（缓存）：${jr.encode()}")
+    if (idsForDB.isEmpty()) {
+      action(jr)
+      return;
+    }
+
+    var idStr = joiner.join(idsForDB)
+    println("获取活动数据（DB）：$idStr")
+    ActivityDao.getActivitiesByIds(idStr) {
+      it?.forEach { entry ->
+        var jo = entry as JsonObject
+        var activity = jo.mapTo(Activity::class.java)
+        cache(activity)
+        jr.add(activity)
+      }
+      action(jr)
+    }
+  }
+
+  fun getActivitiesByType(type: Int, status: Int, page: Int, num: Int, action: (Map<Int, Activity>) -> Unit) {
+    // 缓存60秒
+    ActivityDao.getActivitiesByType(type, status, page, num) {
+      var itemMap = mutableMapOf<Int, Activity>()
+      if (!it.isEmpty) {
+        it.forEach { v ->
+          var activity = (v as JsonObject).mapTo(Activity::class.java)
+          cache(activity)
+          itemMap[activity.id] = activity
+        }
+      }
+      action(itemMap)
+    }
+  }
+
+  fun syncToDB(id: Int, action: (Boolean) -> Unit) {
+    if (activities.containsKey(id)) {
+      var activity = activities[id]
+      ActivityDao.updateActivityById(id, JsonObject.mapFrom(activity)) {
+        action(it)
+      }
+      return
+    }
+    action(false)
+  }
 }
