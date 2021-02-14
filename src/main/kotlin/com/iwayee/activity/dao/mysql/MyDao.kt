@@ -9,17 +9,17 @@ open class MyDao {
   protected var client: MySQLPool? = null
     get() {
       if (field == null) {
-        Hub.config?.mysql?.let {cfg ->
+        Hub.config?.mysql?.let { cfg ->
           var connectOptions = MySQLConnectOptions()
-            .setPort(cfg.port)
-            .setHost(cfg.host)
-            .setDatabase(cfg.db)
-            .setUser(cfg.user)
-            .setPassword(cfg.password)
-            .setCharset(cfg.charset)
+                  .setPort(cfg.port)
+                  .setHost(cfg.host)
+                  .setDatabase(cfg.db)
+                  .setUser(cfg.user)
+                  .setPassword(cfg.password)
+                  .setCharset(cfg.charset)
           // Pool option
           var poolOptions = PoolOptions()
-            .setMaxSize(cfg.pool_max)
+                  .setMaxSize(cfg.pool_max)
 
           // Create the client pool
           field = MySQLPool.pool(Hub.vertx, connectOptions, poolOptions)

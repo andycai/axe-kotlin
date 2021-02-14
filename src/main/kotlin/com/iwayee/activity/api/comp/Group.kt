@@ -4,23 +4,24 @@ import com.iwayee.activity.define.GroupPosition
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
-data class Group(var id: Int) {
-  var level: Int = 1
-  var name: String = ""
-  var logo: String = ""
-  var notice: String = ""
-  var addr: String = ""
-  var activities: JsonArray = JsonArray()
-  var members: JsonArray = JsonArray()
-  var pending: JsonArray = JsonArray()
-
+data class Group(
+        var id: Int = 0,
+        var level: Int = 1,
+        var name: String = "",
+        var logo: String = "",
+        var notice: String = "",
+        var addr: String = "",
+        var activities: JsonArray = JsonArray(),
+        var members: JsonArray = JsonArray(),
+        var pending: JsonArray = JsonArray()
+) {
   fun toJson(): JsonObject {
     var jo = JsonObject()
     jo.put("id", id)
-      .put("level", level)
-      .put("logo", logo)
-      .put("name", name)
-      .put("count", members.size())
+            .put("level", level)
+            .put("logo", logo)
+            .put("name", name)
+            .put("count", members.size())
     return jo
   }
 
@@ -38,7 +39,7 @@ data class Group(var id: Int) {
     for (item in members) {
       val jo = item as JsonObject
       if (jo.getInteger("id") == uid
-        && jo.getInteger("pos") == GroupPosition.POS_OWNER.ordinal) {
+              && jo.getInteger("pos") == GroupPosition.POS_OWNER.ordinal) {
         return true;
       }
     }
@@ -49,7 +50,7 @@ data class Group(var id: Int) {
     for (item in members) {
       val jo = item as JsonObject
       if (jo.getInteger("id") == uid
-        && jo.getInteger("pos") > GroupPosition.POS_MEMBER.ordinal) {
+              && jo.getInteger("pos") > GroupPosition.POS_MEMBER.ordinal) {
         return true
       }
     }

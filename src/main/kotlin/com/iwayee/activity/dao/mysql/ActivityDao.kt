@@ -1,5 +1,142 @@
 package com.iwayee.activity.dao.mysql
 
-object ActivityDao: MyDao() {
+import io.vertx.core.json.JsonArray
+import io.vertx.core.json.JsonObject
+import io.vertx.mysqlclient.MySQLClient
+import io.vertx.sqlclient.Tuple
 
+object ActivityDao : MyDao() {
+  fun create(act: JsonObject, action: (Long) -> Unit) {
+    var fields = "planner,group_id,kind,type,quota,title,`remark`,status,fee_type,fee_male,fee_female,queue,queue_sex,addr,ahead,begin_at,end_at";
+    var sql = "INSERT INTO `activity` ($fields) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
+
+    client?.let {
+      it.preparedQuery(sql).execute(Tuple.of(
+              act.getInteger("planner"),
+              act.getInteger("group_id"),
+              act.getInteger("kind"),
+              act.getInteger("type"),
+              act.getInteger("quota"),
+              act.getString("title"),
+              act.getString("remark"),
+              act.getInteger("status"),
+              act.getInteger("fee_type"),
+              act.getInteger("fee_male"),
+              act.getInteger("fee_female"),
+              act.getString("queue"),
+              act.getString("queue_sex"),
+              act.getString("addr"),
+              act.getInteger("ahead"),
+              act.getString("begin_at"),
+              act.getString("end_at")
+      )) { ar ->
+        var lastInsertId = 0L
+        if (ar.succeeded()) {
+          var rows = ar.result()
+          lastInsertId = rows.property(MySQLClient.LAST_INSERTED_ID)
+          println("Last Insert Id: $lastInsertId")
+        } else {
+          println("Failure: ${ar.cause().message}")
+        }
+        action(lastInsertId)
+      }
+    }
+  }
+
+  fun getActivityByID(id: Int, action: (JsonObject?) -> Unit) {
+    var fields = "`id`,`planner`,`group_id`,`kind`,`type`,`quota`,`title`,`remark`,`status`,`fee_type`,`fee_male`,`fee_female`,`queue`,`queue_sex`,`addr`,`ahead`,`begin_at`,`end_at`";
+    var sql = "SELECT $fields FROM `activity` WHERE id = ?"
+
+    client?.let {
+      it.preparedQuery(sql).execute(Tuple.of(id)) { ar ->
+        var jo: JsonObject? = null
+        if (ar.succeeded()) {
+          var rows = ar.result()
+          for (row in rows) {
+            jo = row.toJson()
+          }
+        } else {
+          println("Failure: ${ar.cause().message}")
+        }
+        action(jo)
+      }
+    }
+  }
+
+  fun getActivitiesByType(type: Int, status: Int, page: Int, num: Int, action: (JsonArray) -> Unit) {
+    var fields = "`id`,`planner`,`group_id`,`kind`,`type`,`quota`,`title`,`remark`,`status`,`fee_type`,`fee_male`,`fee_female`,`queue`,`addr`,`ahead`,`begin_at`,`end_at`";
+    var sql = "SELECT $fields FROM `activity` WHERE `type` = ? AND `status` = ? ORDER BY `id` DESC LIMIT ${(page - 1) * num},$num"
+
+    client?.let {
+      it.preparedQuery(sql).execute(Tuple.of(
+              type,
+              status
+      )) { ar ->
+        var jr = JsonArray()
+        if (ar.succeeded()) {
+          var rows = ar.result()
+          for (row in rows) {
+            jr.add(row.toJson())
+          }
+        } else {
+          println("Failure: ${ar.cause().message}")
+        }
+        action(jr)
+      }
+    }
+  }
+
+  fun getActivitiesByIds(ids: String, action: (JsonArray) -> Unit) {
+    val fields = "`id`,`planner`,`group_id`,`kind`,`type`,`quota`,`title`,`remark`,`status`,`fee_type`,`fee_male`,`fee_female`,`queue`,`addr`,`ahead`,`begin_at`,`end_at`"
+    var sql = "SELECT $fields FROM `group` WHERE id IN($ids)"
+
+    client?.let {
+      it.preparedQuery(sql).execute { ar ->
+        var jr = JsonArray()
+        if (ar.succeeded()) {
+          var rows = ar.result()
+          for (row in rows) {
+            jr.add(row.toJson())
+          }
+        } else {
+          println("Failure: ${ar.cause().message}")
+        }
+        action(jr)
+      }
+    }
+  }
+
+  fun updateGroupById(id: Int, group: JsonObject, action: (Boolean) -> Unit) {
+    val fields = ("level = ?, "
+            + "name = ?, "
+            + "logo = ?, "
+            + "notice = ?, "
+            + "addr = ?, "
+            + "members = ?, "
+            + "pending = ?, "
+            + "activities = ?")
+    var sql = "UPDATE `group` SET $fields WHERE id = ?"
+
+    client?.let {
+      it.preparedQuery(sql).execute(Tuple.of(
+              group.getInteger("level"),
+              group.getString("name"),
+              group.getString("logo"),
+              group.getString("notice"),
+              group.getString("addr"),
+              group.getJsonArray("members").encode(),
+              group.getJsonArray("pending").encode(),
+              group.getJsonArray("activities").encode(),
+              id
+      )) { ar ->
+        var ret = false
+        if (ar.succeeded()) {
+          ret = true
+        } else {
+          println("Failure: ${ar.cause().message}")
+        }
+        action(ret)
+      }
+    }
+  }
 }

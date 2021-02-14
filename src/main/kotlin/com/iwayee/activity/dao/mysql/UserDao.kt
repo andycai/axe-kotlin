@@ -4,7 +4,7 @@ import io.vertx.core.json.JsonObject
 import io.vertx.mysqlclient.MySQLClient
 import io.vertx.sqlclient.Tuple
 
-object UserDao: MyDao() {
+object UserDao : MyDao() {
   fun create(user: JsonObject, action: (Long) -> Unit) {
     var fields = "username,password,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups";
     var sql = "INSERT INTO user ($fields) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
@@ -30,16 +30,16 @@ object UserDao: MyDao() {
               user.getString("ip"),
               user.getString("activities"),
               user.getString("groups")
-      )){ ar ->
+      )) { ar ->
+        var lastInsertId = 0L
         if (ar.succeeded()) {
           var rows = ar.result()
-          var lastInsertId = rows.property(MySQLClient.LAST_INSERTED_ID)
+          lastInsertId = rows.property(MySQLClient.LAST_INSERTED_ID)
           println("Last Insert Id: $lastInsertId")
-          action(lastInsertId)
         } else {
           println("Failure: ${ar.cause().message}")
-          action(0L)
         }
+        action(lastInsertId)
       }
     }
   }
@@ -50,17 +50,16 @@ object UserDao: MyDao() {
 
     client?.let {
       it.preparedQuery(sql).execute(Tuple.of(id)) { ar ->
+        var jo: JsonObject? = null
         if (ar.succeeded()) {
           var rows = ar.result()
-          var jo = JsonObject()
           for (row in rows) {
             jo = row.toJson()
           }
-          action(jo)
         } else {
           println("Failure: ${ar.cause().message}")
-          action(null)
         }
+        action(jo)
       }
     }
   }
@@ -71,17 +70,16 @@ object UserDao: MyDao() {
 
     client?.let {
       it.preparedQuery(sql).execute(Tuple.of(username)) { ar ->
+        var jo: JsonObject? = null
         if (ar.succeeded()) {
           var rows = ar.result()
-          var jo = JsonObject()
           for (row in rows) {
             jo = row.toJson()
           }
-          action(jo)
         } else {
           println("Failure: ${ar.cause().message}")
-          action(null)
         }
+        action(jo)
       }
     }
   }
@@ -91,32 +89,30 @@ object UserDao: MyDao() {
     var sql = "SELECT $fields FROM `user` WHERE id IN($ids)"
 
     client?.let {
-      it.preparedQuery(sql).execute{ ar ->
+      it.preparedQuery(sql).execute { ar ->
+        var jo: JsonObject? = null
         if (ar.succeeded()) {
           var rows = ar.result()
-          if (rows.size() > 0) {
-            var jo = JsonObject()
-            for (row in rows) {
-              jo.put(row.getInteger("id").toString(), row.toJson())
-            }
-            action(jo)
-          } else {
-            println("Failure: ${ar.cause().message}")
-            action(JsonObject())
+          jo = JsonObject()
+          for (row in rows) {
+            jo.put(row.getInteger("id").toString(), row.toJson())
           }
+        } else {
+          println("Failure: ${ar.cause().message}")
         }
+        action(jo)
       }
     }
   }
 
   fun updateUserById(id: Int, user: JsonObject, action: (Boolean) -> Unit) {
     var fields = ("nick = ?, "
-      + "wx_nick = ?, "
-      + "token = ?, "
-      + "wx_token = ?, "
-      + "ip = ?, "
-      + "groups = ?, "
-      + "activities = ?")
+            + "wx_nick = ?, "
+            + "token = ?, "
+            + "wx_token = ?, "
+            + "ip = ?, "
+            + "groups = ?, "
+            + "activities = ?")
     var sql = "UPDATE `user` SET $fields WHERE id = ?"
 
     client?.let {
@@ -130,12 +126,13 @@ object UserDao: MyDao() {
               user.getJsonArray("activities").encode(),
               id
       )) { ar ->
+        var ret = false
         if (ar.succeeded()) {
-          action(true)
+          ret = true
         } else {
           println("Failure: ${ar.cause().message}")
-          action(false)
         }
+        action(ret)
       }
     }
   }
