@@ -64,7 +64,7 @@ object ActivityDao : MyDao() {
   }
 
   fun getActivitiesByType(type: Int, status: Int, page: Int, num: Int, action: (JsonArray) -> Unit) {
-    var fields = "`id`,`planner`,`group_id`,`kind`,`type`,`quota`,`title`,`remark`,`status`,`fee_type`,`fee_male`,`fee_female`,`queue`,`addr`,`ahead`,`begin_at`,`end_at`";
+    var fields = "`id`,`planner`,`group_id`,`kind`,`type`,`quota`,`title`,`remark`,`status`,`fee_type`,`fee_male`,`fee_female`,`queue`,`queue_sex`,`addr`,`ahead`,`begin_at`,`end_at`";
     var sql = "SELECT $fields FROM `activity` WHERE `type` = ? AND `status` = ? ORDER BY `id` DESC LIMIT ${(page - 1) * num},$num"
 
     client?.let {
@@ -87,8 +87,8 @@ object ActivityDao : MyDao() {
   }
 
   fun getActivitiesByIds(ids: String, action: (JsonArray) -> Unit) {
-    val fields = "`id`,`planner`,`group_id`,`kind`,`type`,`quota`,`title`,`remark`,`status`,`fee_type`,`fee_male`,`fee_female`,`queue`,`addr`,`ahead`,`begin_at`,`end_at`"
-    var sql = "SELECT $fields FROM `group` WHERE id IN($ids)"
+    val fields = "`id`,`planner`,`group_id`,`kind`,`type`,`quota`,`title`,`remark`,`status`,`fee_type`,`fee_male`,`fee_female`,`queue`, `queue_sex`,`addr`,`ahead`,`begin_at`,`end_at`"
+    var sql = "SELECT $fields FROM `activity` WHERE id IN($ids)"
 
     client?.let {
       it.preparedQuery(sql).execute { ar ->
@@ -135,6 +135,32 @@ object ActivityDao : MyDao() {
               activity.getString("begin_at"),
               activity.getString("end_at"),
               activity.getString("addr"),
+              id
+      )) { ar ->
+        var ret = false
+        if (ar.succeeded()) {
+          ret = true
+        } else {
+          println("Failure: ${ar.cause().message}")
+        }
+        action(ret)
+      }
+    }
+  }
+
+  fun updateActivityStatus(id: Int, activity: JsonObject, action: (Boolean) -> Unit) {
+    val fields = (""
+            + "status = ?, "
+            + "fee_male = ?, "
+            + "fee_female = ?"
+            )
+    var sql = "UPDATE `activity` SET $fields WHERE `id` = ?"
+
+    client?.let {
+      it.preparedQuery(sql).execute(Tuple.of(
+              activity.getInteger("status"),
+              activity.getInteger("fee_male"),
+              activity.getInteger("fee_female"),
               id
       )) { ar ->
         var ret = false

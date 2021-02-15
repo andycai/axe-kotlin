@@ -57,7 +57,7 @@ object GroupCache : BaseCache() {
       }
       if (groups.containsKey(id)) {
         groups[id]?.let {
-          jr.add(it)
+          jr.add(it.toJson())
         }
       } else {
         idsForDB.add(id)

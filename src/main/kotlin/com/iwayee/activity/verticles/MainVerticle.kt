@@ -43,7 +43,7 @@ class MainVerticle: AbstractVerticle() {
     try {
       var some = Some(ctx)
       if (auth) {
-//         some.checkToken()
+         some.checkToken()
       }
       action(some)
     } catch (e: IllegalArgumentException) {
@@ -110,9 +110,9 @@ class MainVerticle: AbstractVerticle() {
     get("/activities", ActivitySystem::getActivities);
 
     post("/activities", ActivitySystem::create);
-    post("/activities/:aid/end", ActivitySystem::endActivity);
-    post("/activities/:aid/apply", ActivitySystem::applyActivity);
-    post("/activities/:aid/cancel", ActivitySystem::cancelActivity);
+    post("/activities/:aid/end", ActivitySystem::end);
+    post("/activities/:aid/apply", ActivitySystem::apply);
+    post("/activities/:aid/cancel", ActivitySystem::cancel);
 
     put("/activities/:aid", ActivitySystem::update);
 

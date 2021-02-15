@@ -83,18 +83,18 @@ object ActivityCache : BaseCache() {
     }
   }
 
-  fun getActivitiesByType(type: Int, status: Int, page: Int, num: Int, action: (Map<Int, Activity>) -> Unit) {
+  fun getActivitiesByType(type: Int, status: Int, page: Int, num: Int, action: (JsonArray) -> Unit) {
     // 缓存60秒
     ActivityDao.getActivitiesByType(type, status, page, num) {
-      var itemMap = mutableMapOf<Int, Activity>()
+      var jr = JsonArray()
       if (!it.isEmpty) {
         it.forEach { v ->
           var activity = (v as JsonObject).mapTo(Activity::class.java)
           cache(activity)
-          itemMap[activity.id] = activity
+          jr.add(activity)
         }
       }
-      action(itemMap)
+      action(jr)
     }
   }
 
