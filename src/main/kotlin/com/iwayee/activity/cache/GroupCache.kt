@@ -77,7 +77,7 @@ object GroupCache : BaseCache() {
         var jo = entry as JsonObject
         var group = jo.mapTo(Group::class.java)
         cache(group)
-        jr.add(group)
+        jr.add(group.toJson())
       }
       action(jr)
     }
@@ -86,30 +86,15 @@ object GroupCache : BaseCache() {
   fun getGroups(page: Int, num: Int, action: (JsonArray) -> Unit) {
     // 缓存60秒
     GroupDao.getGroups(page, num) {
-      if (it.isEmpty) {
-        action(JsonArray())
-      } else {
-        // 先取出所有群组成员总和
-        var ids = mutableListOf<Int>()
-        for (g in it) {
-          var group = (g as JsonObject).mapTo(Group::class.java)
-          for (m in group.members) {
-            ids.add((m as JsonObject).getInteger("id"))
-          }
-        }
+      var jr = JsonArray()
+      for (g in it) {
+        var group = (g as JsonObject).mapTo(Group::class.java)
+        cache(group)
+        groups[group.id] = group
 
-        UserCache.getUsersByIds(ids) { users ->
-          var jr = JsonArray()
-          for (g in users) {
-            var group = (g as JsonObject).mapTo(Group::class.java)
-            cache(group)
-            groups[group.id] = group
-
-            jr.add(group.toJson())
-          }
-          action(jr)
-        }
+        jr.add(group.toJson())
       }
+      action(jr)
     }
   }
 
