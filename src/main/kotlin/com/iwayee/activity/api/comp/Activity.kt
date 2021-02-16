@@ -4,6 +4,7 @@ import com.iwayee.activity.define.*
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import kotlin.math.abs
+import kotlin.math.round
 
 data class Activity(
         var id: Int = 0,
@@ -44,6 +45,55 @@ data class Activity(
             .put("begin_at", begin_at)
             .put("end_at", end_at)
     return jo
+  }
+
+  private fun totalCount(): Int { // 最终确定报名人数
+    var c: Int
+    var size = queue.size()
+    c = when {
+      quota >= size -> size
+      else -> quota
+    }
+    return c
+  }
+
+  private fun maleCount(): Int {
+    var c = 0
+    var count = totalCount()
+    for (i in 0 until count) {
+      if (queue_sex.getInteger(i) == SexType.MALE.ordinal) {
+        c += 1
+      }
+    }
+    return c
+  }
+
+  private fun femaleCount(): Int {
+    var c = 0
+    var count = totalCount()
+    for (i in 0 until count) {
+      if (queue_sex.getInteger(i) == SexType.FEMALE.ordinal) {
+        c += 1
+      }
+    }
+    return c
+  }
+
+  fun settle(fee: Int) {
+    status = if (fee > 0) ActivityStatus.DONE.ordinal else ActivityStatus.END.ordinal
+    when (fee_type) {
+      ActivityFeeType.FEE_TYPE_AFTER_AA.ordinal -> {
+        var cost = round(fee.toFloat() / totalCount()).toInt()
+        fee_male = cost
+        fee_female = cost
+      }
+      ActivityFeeType.FEE_TYPE_AFTER_AB.ordinal -> {
+        fee_female = round((fee.toFloat() - (fee_male * maleCount())) / femaleCount()).toInt()
+      }
+      ActivityFeeType.FEE_TYPE_AFTER_BA.ordinal -> {
+        fee_male = round((fee.toFloat() - (fee_female * femaleCount())) / maleCount()).toInt()
+      }
+    }
   }
 
   // 报名的人数超过候补的限制，避免乱报名，如带100000人报名

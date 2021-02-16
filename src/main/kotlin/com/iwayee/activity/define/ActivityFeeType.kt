@@ -6,6 +6,6 @@ enum class ActivityFeeType {
   FEE_TYPE_FREE,
   FEE_TYPE_BEFORE,
   FEE_TYPE_AFTER_AA,
-  FEE_TYPE_AFTER_BA,
-  FEE_TYPE_AFTER_AB
+  FEE_TYPE_AFTER_AB, // 男固定，女平摊
+  FEE_TYPE_AFTER_BA // 女固定，男平摊
 }

@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonObject
 
 data class Group(
         var id: Int = 0,
+        var scores: Int = 0,
         var level: Int = 1,
         var name: String = "",
         var logo: String = "",
@@ -23,6 +24,10 @@ data class Group(
             .put("name", name)
             .put("count", members.size())
     return jo
+  }
+
+  fun notInPending(index: Int): Boolean {
+    return index < 0 || index >= pending.size()
   }
 
   fun isMember(uid: Int): Boolean {

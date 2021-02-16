@@ -55,7 +55,8 @@ object ActivitySystem {
 
   fun create(some: Some) {
     var uid = some.userId // 通过 session 获取
-    var gid = some.jsonInt("group_id");
+    var gid = some.jsonInt("group_id")
+    var feeType = some.jsonUInt("fee_type")
     var jo = JsonObject()
     jo.put("planner", uid)
             .put("group_id", gid)
@@ -75,10 +76,16 @@ object ActivitySystem {
             .put("queue_sex", "[${some.userSex}]")
             .put("status", ActivityStatus.DOING.ordinal)
     // 活动前结算，必须填写费用
-    var bfFee = (some.jsonUInt("fee_type") == ActivityFeeType.FEE_TYPE_BEFORE.ordinal
-            && (some.jsonInt("fee_male") == 0 || some.jsonInt("fee_female") == 0))
+    var feeErr = false
+    when (feeType) {
+      ActivityFeeType.FEE_TYPE_BEFORE.ordinal -> feeErr = (some.jsonInt("fee_male") == 0 || some.jsonInt("fee_female") == 0)
+      ActivityFeeType.FEE_TYPE_AFTER_AA.ordinal -> feeErr = (some.jsonInt("fee_male") != 0 || some.jsonInt("fee_female") != 0)
+      ActivityFeeType.FEE_TYPE_AFTER_AB.ordinal -> feeErr = (some.jsonInt("fee_male") == 0 || some.jsonInt("fee_female") != 0)
+      ActivityFeeType.FEE_TYPE_AFTER_BA.ordinal -> feeErr = (some.jsonInt("fee_male") != 0 || some.jsonInt("fee_female") == 0)
+    }
+
     when {
-      bfFee -> some.err(ErrCode.ERR_ACTIVITY_FEE)
+      feeErr -> some.err(ErrCode.ERR_ACTIVITY_FEE)
       gid > 0 -> {
         GroupCache.getGroupById(gid) { group ->
           when {
@@ -215,6 +222,7 @@ object ActivitySystem {
             }
           }
           uid != activity.planner -> some.err(ErrCode.ERR_ACTIVITY_NOT_PLANNER)
+          else -> doUpdate(some, activity)
         }
       } ?: let {
         some.err(ErrCode.ERR_ACTIVITY_NO_DATA)
@@ -222,7 +230,14 @@ object ActivitySystem {
     }
   }
 
-  private fun doEnd(some: Some, aid: Int, jo: JsonObject) {
+  private fun doEnd(some: Some, fee: Int, aid: Int, act: Activity) {
+    // 结算或者终止
+    act.settle(fee)
+    var jo = JsonObject()
+    jo.put("status", act.status)
+            .put("fee_male", act.fee_male)
+            .put("fee_female", act.fee_female)
+
     ActivityDao.updateActivityStatus(aid, jo) { b ->
       when (b) {
         true -> some.succeed()
@@ -233,13 +248,8 @@ object ActivitySystem {
 
   fun end(some: Some) {
     var aid = some.getUInt("aid")
-    var status = if (some.jsonBool("end")) ActivityStatus.END.ordinal else ActivityStatus.DONE.ordinal
+    var fee = some.jsonInt("fee") // 单位：分
     var uid = some.userId
-    var jo = JsonObject()
-    // 服务器端做结算
-    jo.put("status", status)
-            .put("fee_male", some.jsonInt("fee_male"))
-            .put("fee_female", some.jsonInt("fee_female"))
 
     ActivityCache.getActivityById(aid) { activity ->
       when {
@@ -248,12 +258,12 @@ object ActivitySystem {
           GroupCache.getGroupById(activity.group_id) { group ->
             when {
               group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
-              group.isManager(uid) -> doEnd(some, aid, jo)
+              group.isManager(uid) -> doEnd(some, fee, aid, activity)
               else -> some.err(ErrCode.ERR_GROUP_NOT_MANAGER)
             }
           }
         }
-        else -> doEnd(some, aid, jo)
+        else -> doEnd(some, fee, aid, activity)
       }
     }
   }
@@ -313,6 +323,11 @@ object ActivitySystem {
     var uid = some.userId;
     var maleCount = some.jsonInt("male_count");
     var femaleCount = some.jsonInt("female_count");
+
+    if (maleCount + femaleCount <= 0) {
+      some.err(ErrCode.ERR_PARAM)
+      return
+    }
 
     ActivityCache.getActivityById(aid) { activity ->
       when {

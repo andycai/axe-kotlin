@@ -2,8 +2,10 @@ package com.iwayee.activity.cache
 
 import com.iwayee.activity.api.comp.Group
 import com.iwayee.activity.dao.mysql.GroupDao
+import com.iwayee.activity.define.GroupPosition
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import java.util.*
 
 object GroupCache : BaseCache() {
   private var groups = mutableMapOf<Int, Group>()
@@ -15,10 +17,19 @@ object GroupCache : BaseCache() {
   }
 
   fun create(jo: JsonObject, uid: Int, action: (Long) -> Unit) {
-    GroupDao.create(jo) {
+    var group = jo.mapTo(Group::class.java)
+    var now = Date().time
+    var member = JsonObject()
+    member.put("id", uid)
+            .put("scores", 0)
+            .put("pos", GroupPosition.POS_OWNER.ordinal)
+            .put("at", now)
+    group.members = JsonArray().add(member)
+    group.pending = JsonArray()
+    group.activities = JsonArray()
+    GroupDao.create(JsonObject.mapFrom(group)) {
       if (it > 0L) {
-        jo.put("id", it.toInt())
-        var group = jo.mapTo(Group::class.java)
+        group.id = it.toInt()
         cache(group)
       }
       action(it)
@@ -36,9 +47,7 @@ object GroupCache : BaseCache() {
           var group = it.mapTo(Group::class.java)
           cache(group)
           action(group)
-          return@getGroupById
-        }
-        action(null)
+        }?: action(null)
       }
     }
   }
@@ -52,34 +61,33 @@ object GroupCache : BaseCache() {
     }
 
     for (id in ids) {
-      if (jr.contains(id)) {
-        continue
-      }
-      if (groups.containsKey(id)) {
-        groups[id]?.let {
-          jr.add(it.toJson())
+      when {
+        jr.contains(id) -> continue
+        groups.containsKey(id) -> {
+          groups[id]?.let {
+            jr.add(it.toJson())
+          }
         }
-      } else {
-        idsForDB.add(id)
+        else -> idsForDB.add(id)
       }
     }
 
     println("获取群组数据（缓存）：${jr.encode()}")
-    if (idsForDB.isEmpty()) {
-      action(jr)
-      return;
-    }
-
-    var idStr = joiner.join(idsForDB)
-    println("获取群组数据（DB）：$idStr")
-    GroupDao.getGroupsByIds(idStr) {
-      it?.forEach { entry ->
-        var jo = entry as JsonObject
-        var group = jo.mapTo(Group::class.java)
-        cache(group)
-        jr.add(group.toJson())
+    when {
+      idsForDB.isEmpty() -> action(jr)
+      else -> {
+        var idStr = joiner.join(idsForDB)
+        println("获取群组数据（DB）：$idStr")
+        GroupDao.getGroupsByIds(idStr) {
+          it?.forEach { entry ->
+            var jo = entry as JsonObject
+            var group = jo.mapTo(Group::class.java)
+            cache(group)
+            jr.add(group.toJson())
+          }
+          action(jr)
+        }
       }
-      action(jr)
     }
   }
 
@@ -99,13 +107,14 @@ object GroupCache : BaseCache() {
   }
 
   fun syncToDB(id: Int, action: (Boolean) -> Unit) {
-    if (groups.containsKey(id)) {
-      var group = groups[id]
-      GroupDao.updateGroupById(id, JsonObject.mapFrom(group)) {
-        action(it)
+    when {
+      groups.containsKey(id) -> {
+        var group = groups[id]
+        GroupDao.updateGroupById(id, JsonObject.mapFrom(group)) {
+          action(it)
+        }
       }
-      return
+      else -> action(false)
     }
-    action(false)
   }
 }

@@ -16,12 +16,15 @@ object ActivityCache : BaseCache() {
 
   fun create(jo: JsonObject, uid: Int, action: (Long) -> Unit) {
     ActivityDao.create(jo) { newId ->
-      if (newId > 0L) {
-        var activity = jo.mapTo(Activity::class.java)
-        activity.id = newId.toInt()
-        cache(activity)
+      when {
+        newId <= 0L -> action(newId)
+        else -> {
+          var activity = jo.mapTo(Activity::class.java)
+          activity.id = newId.toInt()
+          cache(activity)
+          action(newId)
+        }
       }
-      action(newId)
     }
   }
 
@@ -36,9 +39,7 @@ object ActivityCache : BaseCache() {
           var activity = it.mapTo(Activity::class.java)
           cache(activity)
           action(activity)
-          return@getActivityById
-        }
-        action(null)
+        }?: action(null)
       }
     }
   }
@@ -52,34 +53,33 @@ object ActivityCache : BaseCache() {
     }
 
     for (id in ids) {
-      if (jr.contains(id)) {
-        continue
-      }
-      if (activities.containsKey(id)) {
-        activities[id]?.let {
-          jr.add(it)
+      when {
+        jr.contains(id) -> continue
+        activities.containsKey(id) -> {
+          activities[id]?.let {
+            jr.add(it)
+          }
         }
-      } else {
-        idsForDB.add(id)
+        else -> idsForDB.add(id)
       }
     }
 
     println("获取活动数据（缓存）：${jr.encode()}")
-    if (idsForDB.isEmpty()) {
-      action(jr)
-      return;
-    }
-
-    var idStr = joiner.join(idsForDB)
-    println("获取活动数据（DB）：$idStr")
-    ActivityDao.getActivitiesByIds(idStr) {
-      it?.forEach { entry ->
-        var jo = entry as JsonObject
-        var activity = jo.mapTo(Activity::class.java)
-        cache(activity)
-        jr.add(activity)
+    when {
+      idsForDB.isEmpty() -> action(jr)
+      else -> {
+        var idStr = joiner.join(idsForDB)
+        println("获取活动数据（DB）：$idStr")
+        ActivityDao.getActivitiesByIds(idStr) {
+          it?.forEach { entry ->
+            var jo = entry as JsonObject
+            var activity = jo.mapTo(Activity::class.java)
+            cache(activity)
+            jr.add(activity)
+          }
+          action(jr)
+        }
       }
-      action(jr)
     }
   }
 
@@ -87,25 +87,29 @@ object ActivityCache : BaseCache() {
     // 缓存60秒
     ActivityDao.getActivitiesByType(type, status, page, num) {
       var jr = JsonArray()
-      if (!it.isEmpty) {
-        it.forEach { v ->
-          var activity = (v as JsonObject).mapTo(Activity::class.java)
-          cache(activity)
-          jr.add(activity)
+      when {
+        it.isEmpty -> action(jr)
+        else -> {
+          it.forEach { v ->
+            var activity = (v as JsonObject).mapTo(Activity::class.java)
+            cache(activity)
+            jr.add(activity)
+          }
+          action(jr)
         }
       }
-      action(jr)
     }
   }
 
   fun syncToDB(id: Int, action: (Boolean) -> Unit) {
-    if (activities.containsKey(id)) {
-      var activity = activities[id]
-      ActivityDao.updateActivityById(id, JsonObject.mapFrom(activity)) {
-        action(it)
+    when {
+      activities.containsKey(id) -> {
+        var activity = activities[id]
+        ActivityDao.updateActivityById(id, JsonObject.mapFrom(activity)) {
+          action(it)
+        }
       }
-      return
+      else -> action(false)
     }
-    action(false)
   }
 }

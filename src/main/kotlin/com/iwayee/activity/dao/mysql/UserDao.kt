@@ -45,7 +45,7 @@ object UserDao : MyDao() {
   }
 
   fun getUserById(id: Int, action: (JsonObject?) -> Unit) {
-    var fields = "id,username,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups,create_at";
+    var fields = "id,scores,username,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups,create_at";
     var sql = "SELECT $fields FROM `user` WHERE id = ?"
 
     client?.let {
@@ -65,7 +65,7 @@ object UserDao : MyDao() {
   }
 
   fun getUserByName(username: String, action: (JsonObject?) -> Unit) {
-    var fields = "id,username,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups,create_at";
+    var fields = "id,scores,username,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups,create_at";
     var sql = "SELECT $fields FROM `user` WHERE username = ?"
 
     client?.let {
@@ -85,7 +85,7 @@ object UserDao : MyDao() {
   }
 
   fun getUserByIds(ids: String, action: (JsonObject?) -> Unit) {
-    var fields = "id,username,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups";
+    var fields = "id,scores,username,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups";
     var sql = "SELECT $fields FROM `user` WHERE id IN($ids)"
 
     client?.let {

@@ -6,6 +6,7 @@ import io.vertx.core.json.JsonArray
 data class User(
         var id: Int = 0,
         var sex: Int = SexType.MALE.ordinal,
+        var scores: Int = 0,
         var username: String = "",
         var password: String = "",
         var nick: String = "",

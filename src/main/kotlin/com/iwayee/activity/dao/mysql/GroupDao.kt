@@ -35,7 +35,7 @@ object GroupDao : MyDao() {
   }
 
   fun getGroupById(id: Int, action: (JsonObject?) -> Unit) {
-    var fields = "`id`, `level`,`name`,`logo`,`members`, `pending`,`notice`,`addr`,`activities`";
+    var fields = "`id`,`scores`, `level`,`name`,`logo`,`members`, `pending`,`notice`,`addr`,`activities`";
     var sql = "SELECT $fields FROM `group` WHERE id = ?"
 
     client?.let {
@@ -55,7 +55,7 @@ object GroupDao : MyDao() {
   }
 
   fun getGroups(page: Int, num: Int, action: (JsonArray) -> Unit) {
-    var fields = "`id`, `level`,`name`,`logo`,`members`, `pending`, `notice`,`addr`,`activities`";
+    var fields = "`id`,`scores`, `level`,`name`,`logo`,`members`, `pending`, `notice`,`addr`,`activities`";
     var sql = "SELECT $fields FROM `group` ORDER BY id DESC LIMIT ${(page - 1) * num},$num"
 
     client?.let {
@@ -75,7 +75,7 @@ object GroupDao : MyDao() {
   }
 
   fun getGroupsByIds(ids: String, action: (JsonArray) -> Unit) {
-    var fields = "`id`, `level`,`name`,`logo`,`members`, `pending`, `notice`,`addr`,`activities`";
+    var fields = "`id`,`scores`,`level`,`name`,`logo`,`members`, `pending`, `notice`,`addr`,`activities`";
     var sql = "SELECT $fields FROM `group` WHERE id IN($ids)"
 
     client?.let {

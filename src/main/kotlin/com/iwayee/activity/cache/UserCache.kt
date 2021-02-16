@@ -111,8 +111,8 @@ object UserCache : BaseCache() {
         it?.let {
           var user = it.mapTo(User::class.java)
           cacheUser(user)
-        }
-        action(usersForName[name])
+          action(user)
+        }?: action(null)
       }
     }
   }
@@ -128,9 +128,7 @@ object UserCache : BaseCache() {
           var user = it.mapTo(User::class.java)
           cacheUser(user)
           action(user)
-          return@getUserById
-        }
-        action(null)
+        }?: action(null)
       }
     }
   }
@@ -144,44 +142,45 @@ object UserCache : BaseCache() {
     }
 
     for (id in ids) {
-      if (itemMap.containsKey(id)) {
-        continue
-      }
-      if (usersForId.containsKey(id)) {
-        usersForId[id]?.let {
-          itemMap[id] = it
+      when {
+        itemMap.containsKey(id) -> continue
+        usersForId.containsKey(id) -> {
+          usersForId[id]?.let {
+            itemMap[id] = it
+          }
         }
-      } else {
-        idsForDB.add(id)
+        else -> idsForDB.add(id)
       }
     }
 
     println("获取用户数据（缓存）：$itemMap")
-    if (idsForDB.isEmpty()) {
-      action(itemMap)
-      return;
-    }
-
-    var idStr = joiner.join(idsForDB)
-    println("获取用户数据（DB）：$idStr")
-    UserDao.getUserByIds(idStr) {
-      it?.forEach { entry ->
-        var jo = entry.value as JsonObject
-        var user = jo.mapTo(User::class.java)
-        cacheUser(user)
-        itemMap[user.id] = user
+    when {
+      idsForDB.isEmpty() -> action(itemMap)
+      else -> {
+        var idStr = joiner.join(idsForDB)
+        println("获取用户数据（DB）：$idStr")
+        UserDao.getUserByIds(idStr) {
+          it?.forEach { entry ->
+            var jo = entry.value as JsonObject
+            var user = jo.mapTo(User::class.java)
+            cacheUser(user)
+            itemMap[user.id] = user
+          }
+          action(itemMap)
+        }
       }
-      action(itemMap)
     }
   }
 
   fun syncToDB(id: Int, action: (Boolean) -> Unit) {
-    if (usersForId.containsKey(id)) {
-      var user = usersForId[id]
-      UserDao.updateUserById(id, JsonObject.mapFrom(user)) {
-        action(it)
+    when {
+      usersForId.containsKey(id) -> {
+        var user = usersForId[id]
+        UserDao.updateUserById(id, JsonObject.mapFrom(user)) {
+          action(it)
+        }
       }
+      else -> action(false)
     }
-    action(false)
   }
 }

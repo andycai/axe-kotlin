@@ -37,15 +37,18 @@ object UserSystem {
                 .put("activities", "[]")
                 .put("groups", "[]")
         UserCache.create(jo) { newId ->
-          if (newId > 0L) {
-            var token = jo.getString("token")
-            UserCache.cacheSession(token, newId.toInt(), sex)
-            UserCache.getUserById(newId.toInt()) { user ->
-              user?.let {
-                some.ok(user2Json(user))
-                return@getUserById
+          when (newId) {
+            0L -> some.err(ErrCode.ERR_OP)
+            else -> {
+              var token = jo.getString("token")
+              UserCache.cacheSession(token, newId.toInt(), sex)
+              UserCache.getUserById(newId.toInt()) { user ->
+                user?.let {
+                  some.ok(user2Json(user))
+                }?:let {
+                  some.err(ErrCode.ERR_AUTH)
+                }
               }
-              some.err(ErrCode.ERR_AUTH)
             }
           }
         }
@@ -75,9 +78,9 @@ object UserSystem {
     UserCache.getUserByName(name) {
       it?.let {
         some.ok(user2Json(it))
-        return@getUserByName
+      }?:let {
+        some.err(ErrCode.ERR_DATA)
       }
-      some.err(ErrCode.ERR_DATA)
     }
   }
 
@@ -87,9 +90,9 @@ object UserSystem {
     UserCache.getUserById(uid) {
       it?.let {
         some.ok(user2Json(it))
-        return@getUserById
+      }?:let {
+        some.err(ErrCode.ERR_DATA)
       }
-      some.err(ErrCode.ERR_DATA)
     }
   }
 }
