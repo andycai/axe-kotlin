@@ -11,10 +11,10 @@ import java.util.*
 
 object UserCache : BaseCache() {
   private var usersForName = mutableMapOf<String, User>()
-  private var usersForId = mutableMapOf<Int, User>()
+  private var usersForId = mutableMapOf<Long, User>()
   private var sessions = mutableMapOf<String, Session>()
 
-  fun cacheSession(token: String, uid: Int, sex: Int) {
+  fun cacheSession(token: String, uid: Long, sex: Int) {
     var session: Session? = null
     if (sessions.containsKey(token)) {
       session = sessions[token]
@@ -36,7 +36,7 @@ object UserCache : BaseCache() {
     }
   }
 
-  fun currentId(token: String): Int {
+  fun currentId(token: String): Long {
     var s = sessions[token]
     if (s != null) {
       return s.uid
@@ -66,7 +66,7 @@ object UserCache : BaseCache() {
     usersForName[user.username] = user
   }
 
-  fun toPlayer(usersMap: Map<Int, User>): JsonObject {
+  fun toPlayer(usersMap: Map<Long, User>): JsonObject {
     var jo = JsonObject()
     usersMap?.forEach { (key, value) ->
       var player = Player()
@@ -76,7 +76,7 @@ object UserCache : BaseCache() {
     return jo
   }
 
-  fun toMember(usersMap: Map<Int, User>, members: JsonArray): JsonArray {
+  fun toMember(usersMap: Map<Long, User>, members: JsonArray): JsonArray {
     var jr = JsonArray()
     for (item in members) {
       var mb = (item as JsonObject).mapTo(Member::class.java)
@@ -91,7 +91,7 @@ object UserCache : BaseCache() {
   fun create(jo: JsonObject, action: (Long) -> Unit) {
     UserDao.create(jo) {
       if (it > 0L) {
-        jo.put("id", it.toInt())
+        jo.put("id", it)
         var user = jo.mapTo(User::class.java)
         cacheUser(user)
       }
@@ -117,7 +117,7 @@ object UserCache : BaseCache() {
     }
   }
 
-  fun getUserById(id: Int, action: (User?) -> Unit) {
+  fun getUserById(id: Long, action: (User?) -> Unit) {
     if (usersForId.containsKey(id)) {
       println("获取用户数据（缓存）: $id")
       action(usersForId[id])
@@ -133,9 +133,9 @@ object UserCache : BaseCache() {
     }
   }
 
-  fun getUsersByIds(ids: List<Int>, action: (Map<Int, User>) -> Unit) {
-    var itemMap = mutableMapOf<Int, User>()
-    var idsForDB = mutableListOf<Int>()
+  fun getUsersByIds(ids: List<Long>, action: (Map<Long, User>) -> Unit) {
+    var itemMap = mutableMapOf<Long, User>()
+    var idsForDB = mutableListOf<Long>()
     if (ids.isEmpty()) {
       action(itemMap)
       return
@@ -172,7 +172,7 @@ object UserCache : BaseCache() {
     }
   }
 
-  fun syncToDB(id: Int, action: (Boolean) -> Unit) {
+  fun syncToDB(id: Long, action: (Boolean) -> Unit) {
     when {
       usersForId.containsKey(id) -> {
         var user = usersForId[id]

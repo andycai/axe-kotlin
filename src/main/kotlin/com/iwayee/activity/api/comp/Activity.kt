@@ -7,8 +7,8 @@ import kotlin.math.abs
 import kotlin.math.round
 
 data class Activity(
-        var id: Int = 0,
-        var planner: Int = 0,
+        var id: Long = 0,
+        var planner: Long = 0,
         var kind: Int = ActivityKind.KIND_DATE.ordinal, // 活动分类:1羽毛球,2篮球,3足球,4聚餐...
         var type: Int = ActivityType.PUBLIC.ordinal, // 活动类型:1全局保护,2全局公开,3群组
         var status: Int = ActivityStatus.DOING.ordinal, // 活动状态:1进行中,2正常结算完成,3手动终止
@@ -97,15 +97,15 @@ data class Activity(
   }
 
   // 报名的人数超过候补的限制，避免乱报名，如带100000人报名
-  fun overQuota(uid: Int, total: Int): Boolean {
+  fun overQuota(uid: Long, total: Int): Boolean {
     return queue.size() + total - quota > OVERFLOW
   }
 
   // 要取消报名的数量超过已经报名的数量
-  fun notEnough(uid: Int, total: Int): Boolean {
+  fun notEnough(uid: Long, total: Int): Boolean {
     var count = 0
     for (item in queue) {
-      if ((item as Int) == uid) {
+      if ((item as Long) == uid) {
         count += 1
       }
     }
@@ -128,7 +128,7 @@ data class Activity(
     }
   }
 
-  fun enqueue(uid: Int, maleCount: Int, femaleCount: Int) {
+  fun enqueue(uid: Long, maleCount: Int, femaleCount: Int) {
     fixQueue()
     for (i in 0 until maleCount) {
       queue.add(uid)
@@ -140,14 +140,14 @@ data class Activity(
     }
   }
 
-  fun dequeue(uid: Int, maleCount: Int, femaleCount: Int) {
+  fun dequeue(uid: Long, maleCount: Int, femaleCount: Int) {
     fixQueue()
     var mCount = 0
     var fCount = 0
     var size = queue.size()
     var posArr = mutableListOf<Int>()
     for (i in size-1 downTo 0) {
-      var id = queue.getInteger(i)
+      var id = queue.getLong(i)
       if (id == uid) {
         // 男
         if (queue_sex.getInteger(i) == SexType.MALE.ordinal && maleCount > mCount) {

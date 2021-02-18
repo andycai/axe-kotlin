@@ -6,7 +6,7 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
 object ActivityCache : BaseCache() {
-  private var activities = mutableMapOf<Int, Activity>()
+  private var activities = mutableMapOf<Long, Activity>()
 
   private fun cache(activity: Activity) {
     activity?.let {
@@ -14,13 +14,13 @@ object ActivityCache : BaseCache() {
     }
   }
 
-  fun create(jo: JsonObject, uid: Int, action: (Long) -> Unit) {
+  fun create(jo: JsonObject, uid: Long, action: (Long) -> Unit) {
     ActivityDao.create(jo) { newId ->
       when {
         newId <= 0L -> action(newId)
         else -> {
           var activity = jo.mapTo(Activity::class.java)
-          activity.id = newId.toInt()
+          activity.id = newId
           cache(activity)
           action(newId)
         }
@@ -28,7 +28,7 @@ object ActivityCache : BaseCache() {
     }
   }
 
-  fun getActivityById(id: Int, action: (Activity?) -> Unit) {
+  fun getActivityById(id: Long, action: (Activity?) -> Unit) {
     if (activities.containsKey(id)) {
       println("获取活动数据（缓存）: $id")
       action(activities[id])
@@ -44,9 +44,9 @@ object ActivityCache : BaseCache() {
     }
   }
 
-  fun getActivitiesByIds(ids: List<Int>, action: (JsonArray) -> Unit) {
+  fun getActivitiesByIds(ids: List<Long>, action: (JsonArray) -> Unit) {
     var jr = JsonArray()
-    var idsForDB = mutableListOf<Int>()
+    var idsForDB = mutableListOf<Long>()
     if (ids.isEmpty()) {
       action(jr)
       return
@@ -101,7 +101,7 @@ object ActivityCache : BaseCache() {
     }
   }
 
-  fun syncToDB(id: Int, action: (Boolean) -> Unit) {
+  fun syncToDB(id: Long, action: (Boolean) -> Unit) {
     when {
       activities.containsKey(id) -> {
         var activity = activities[id]

@@ -14,28 +14,28 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
 object ActivitySystem {
-  private fun doCreate(some: Some, jo: JsonObject, uid: Int, group: Group?) {
-    ActivityCache.create(jo, uid) { lastInsertId ->
-      when (lastInsertId) {
-        0L -> some.err(ErrCode.ERR_ACTIVITY_CREATE)
+  private fun doCreate(some: Some, jo: JsonObject, uid: Long, group: Group?) {
+    ActivityCache.create(jo, uid) { newId ->
+      when {
+        newId <= 0L -> some.err(ErrCode.ERR_ACTIVITY_CREATE)
         else -> {
           // 更新用户的活动列表
           UserCache.getUserById(uid) { user ->
             when (user) {
               null -> some.err(ErrCode.ERR_ACTIVITY_CREATE)
               else -> {
-                user.addActivity(lastInsertId.toInt())
+                user.addActivity(newId)
                 UserCache.syncToDB(uid) { b ->
                   when (b) {
                     true -> {
                       // 更新群组的活动列表
                       when (group) {
-                        null -> some.ok(JsonObject().put("activity_id", lastInsertId))
+                        null -> some.ok(JsonObject().put("activity_id", newId))
                         else -> {
-                          group.addActivity(lastInsertId.toInt())
+                          group.addActivity(newId.toInt())
                           GroupCache.syncToDB(group.id) { b ->
                             when (b) {
-                              true -> some.ok(JsonObject().put("activity_id", lastInsertId))
+                              true -> some.ok(JsonObject().put("activity_id", newId))
                               else -> some.err(ErrCode.ERR_ACTIVITY_CREATE)
                             }
                           }
@@ -106,7 +106,7 @@ object ActivitySystem {
         user == null -> some.err(ErrCode.ERR_DATA)
         user.activities.isEmpty -> some.ok(JsonArray())
         else -> {
-          var ids = (user.activities.list as List<Int>)
+          var ids = user.activities.list as List<Long>
           ActivityCache.getActivitiesByIds(ids) { acts ->
             var jr = JsonArray()
             for (item in acts) {
@@ -127,7 +127,7 @@ object ActivitySystem {
         group == null -> some.err(ErrCode.ERR_DATA)
         group.activities.isEmpty -> some.ok(JsonArray())
         else -> {
-          var ids = group.activities.list as List<Int>
+          var ids = group.activities.list as List<Long>
           ActivityCache.getActivitiesByIds(ids) { acts ->
             var jr = JsonArray()
             for (item in acts) {
@@ -156,12 +156,12 @@ object ActivitySystem {
   }
 
   fun getActivityById(some: Some) {
-    var aid = some.getUInt("aid")
+    var aid = some.getULong("aid")
     ActivityCache.getActivityById(aid) { activity ->
       when (activity) {
         null -> some.err(ErrCode.ERR_DATA)
         else -> {
-          var ids = activity.queue.list as List<Int>
+          var ids = activity.queue.list as List<Long>
           UserCache.getUsersByIds(ids) { users ->
             when (users) {
               null -> some.err(ErrCode.ERR_DATA)
@@ -188,7 +188,7 @@ object ActivitySystem {
   }
 
   fun update(some: Some) {
-    var aid = some.getUInt("aid")
+    var aid = some.getULong("aid")
     var quota = some.jsonUInt("quota")
     var ahead = some.jsonUInt("ahead")
     var feeMale = some.jsonInt("fee_male")
@@ -230,7 +230,7 @@ object ActivitySystem {
     }
   }
 
-  private fun doEnd(some: Some, fee: Int, aid: Int, act: Activity) {
+  private fun doEnd(some: Some, fee: Int, aid: Long, act: Activity) {
     // 结算或者终止
     act.settle(fee)
     var jo = JsonObject()
@@ -247,7 +247,7 @@ object ActivitySystem {
   }
 
   fun end(some: Some) {
-    var aid = some.getUInt("aid")
+    var aid = some.getULong("aid")
     var fee = some.jsonInt("fee") // 单位：分
     var uid = some.userId
 
@@ -268,7 +268,7 @@ object ActivitySystem {
     }
   }
 
-  private fun enqueue(some: Some, uid: Int, act: Activity, maleCount: Int, femaleCount: Int) {
+  private fun enqueue(some: Some, uid: Long, act: Activity, maleCount: Int, femaleCount: Int) {
     act.enqueue(uid, maleCount, femaleCount)
     ActivityCache.syncToDB(act.id) { b ->
       when (b) {
@@ -282,7 +282,7 @@ object ActivitySystem {
    * 报名，支持带多人报名
    */
   fun apply(some: Some) {
-    var aid = some.getUInt("aid")
+    var aid = some.getULong("aid")
     var uid = some.userId
     var maleCount = some.jsonInt("male_count")
     var femaleCount = some.jsonInt("female_count")
@@ -305,7 +305,7 @@ object ActivitySystem {
     }
   }
 
-  private fun dequeue(some: Some, uid: Int, act: Activity, maleCount: Int, femaleCount: Int) {
+  private fun dequeue(some: Some, uid: Long, act: Activity, maleCount: Int, femaleCount: Int) {
     act.dequeue(uid, maleCount, femaleCount)
     ActivityCache.syncToDB(act.id) { b ->
       when (b) {
@@ -319,7 +319,7 @@ object ActivitySystem {
    * 取消报名，支持取消自带的多人
    */
   fun cancel(some: Some) {
-    var aid = some.getUInt("aid");
+    var aid = some.getULong("aid");
     var uid = some.userId;
     var maleCount = some.jsonInt("male_count");
     var femaleCount = some.jsonInt("female_count");

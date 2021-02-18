@@ -16,7 +16,7 @@ object GroupCache : BaseCache() {
     }
   }
 
-  fun create(jo: JsonObject, uid: Int, action: (Long) -> Unit) {
+  fun create(jo: JsonObject, uid: Long, action: (Long) -> Unit) {
     var group = jo.mapTo(Group::class.java)
     var now = Date().time
     var member = JsonObject()

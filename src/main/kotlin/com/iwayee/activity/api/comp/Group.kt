@@ -30,20 +30,20 @@ data class Group(
     return index < 0 || index >= pending.size()
   }
 
-  fun isMember(uid: Int): Boolean {
+  fun isMember(uid: Long): Boolean {
     for (item in members) {
       val jo = item as JsonObject
-      if (jo.getInteger("id") == uid) {
+      if (jo.getLong("id") == uid) {
         return true
       }
     }
     return false
   }
 
-  fun isOwner(uid: Int): Boolean {
+  fun isOwner(uid: Long): Boolean {
     for (item in members) {
       val jo = item as JsonObject
-      if (jo.getInteger("id") == uid
+      if (jo.getLong("id") == uid
               && jo.getInteger("pos") == GroupPosition.POS_OWNER.ordinal) {
         return true;
       }
@@ -51,10 +51,10 @@ data class Group(
     return false
   }
 
-  fun isManager(uid: Int): Boolean {
+  fun isManager(uid: Long): Boolean {
     for (item in members) {
       val jo = item as JsonObject
-      if (jo.getInteger("id") == uid
+      if (jo.getLong("id") == uid
               && jo.getInteger("pos") > GroupPosition.POS_MEMBER.ordinal) {
         return true
       }
@@ -79,10 +79,10 @@ data class Group(
     }
   }
 
-  fun promote(uid: Int): Boolean {
+  fun promote(uid: Long): Boolean {
     for (item in members) {
       val jo = item as JsonObject
-      if (jo.getInteger("id") == uid) {
+      if (jo.getLong("id") == uid) {
         jo.put("pos", GroupPosition.POS_MANAGER.ordinal)
         return true
       }
@@ -90,11 +90,11 @@ data class Group(
     return false
   }
 
-  fun transfer(uid: Int, mid: Int): Boolean {
+  fun transfer(uid: Long, mid: Int): Boolean {
     var b = false
     for (item in members) {
       val jo = item as JsonObject
-      if (jo.getInteger("id") == uid) {
+      if (jo.getLong("id") == uid) {
         jo.put("pos", GroupPosition.POS_MEMBER.ordinal)
       }
       if (jo.getInteger("id") == mid) {
@@ -105,10 +105,10 @@ data class Group(
     return b
   }
 
-  fun notIn(uid: Int): Boolean {
+  fun notIn(uid: Long): Boolean {
     for (item in members) {
       var jo = item as JsonObject
-      if (jo.getInteger("id") == uid) {
+      if (jo.getLong("id") == uid) {
         return false
       }
     }

@@ -4,7 +4,7 @@ import com.iwayee.activity.define.SexType
 import io.vertx.core.json.JsonArray
 
 data class User(
-        var id: Int = 0,
+        var id: Long = 0,
         var sex: Int = SexType.MALE.ordinal,
         var scores: Int = 0,
         var username: String = "",
@@ -20,7 +20,7 @@ data class User(
         var groups: JsonArray = JsonArray(),
         var activities: JsonArray = JsonArray()
 ) {
-  fun addActivity(aid: Int) {
+  fun addActivity(aid: Long) {
     if (!activities.contains(aid)) {
       activities.add(aid);
     }

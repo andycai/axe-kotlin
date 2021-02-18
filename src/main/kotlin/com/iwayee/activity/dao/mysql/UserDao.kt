@@ -44,7 +44,7 @@ object UserDao : MyDao() {
     }
   }
 
-  fun getUserById(id: Int, action: (JsonObject?) -> Unit) {
+  fun getUserById(id: Long, action: (JsonObject?) -> Unit) {
     var fields = "id,scores,username,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups,create_at";
     var sql = "SELECT $fields FROM `user` WHERE id = ?"
 
@@ -105,7 +105,7 @@ object UserDao : MyDao() {
     }
   }
 
-  fun updateUserById(id: Int, user: JsonObject, action: (Boolean) -> Unit) {
+  fun updateUserById(id: Long, user: JsonObject, action: (Boolean) -> Unit) {
     var fields = ("nick = ?, "
             + "wx_nick = ?, "
             + "token = ?, "

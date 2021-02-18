@@ -17,14 +17,10 @@ class Some(ctx: RoutingContext) {
   var response: HttpServerResponse? = null
     get() = ctx.response()
 
-  var userId: Int = 0
-    get() {
-      return UserCache.currentId(token)
-    }
+  var userId: Long = 0
+    get() = UserCache.currentId(token)
   var userSex: Int = 0
-    get() {
-      return UserCache.currentSex(token)
-    }
+    get() = UserCache.currentSex(token)
   var token: String = ""
     get() {
       var param = getJson()
@@ -45,6 +41,18 @@ class Some(ctx: RoutingContext) {
 
   fun json(json: Any) {
     ctx.json(json)
+  }
+
+  fun getULong(key: String): Long {
+    var v = ctx.request().getParam(key).toLong()
+    checkArgument(v > 0)
+    return v
+  }
+
+  fun getLong(key: String): Long {
+    var v = ctx.request().getParam(key).toLong()
+    checkArgument(v >= 0)
+    return v
   }
 
   fun getUInt(key: String): Int {

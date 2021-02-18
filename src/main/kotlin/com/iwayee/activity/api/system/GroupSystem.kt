@@ -18,9 +18,9 @@ object GroupSystem {
       when {
         it == null || it.members.isEmpty -> some.err(ErrCode.ERR_DATA)
         else -> {
-          var ids = mutableListOf<Int>()
+          var ids = mutableListOf<Long>()
           for (item in it.members) {
-            ids.add((item as JsonObject).getInteger("id"))
+            ids.add((item as JsonObject).getLong("id"))
           }
 
           UserCache.getUsersByIds(ids) { users ->
@@ -106,7 +106,7 @@ object GroupSystem {
       when {
         group == null || group.pending.isEmpty -> some.err(ErrCode.ERR_GROUP_GET_DATA)
         else -> {
-          var ids = (group.pending.list as List<Int>)
+          var ids = group.pending.list as List<Long>
           UserCache.getUsersByIds(ids) { users ->
             var jr = JsonArray()
             for ((key, value) in users) {
@@ -157,7 +157,7 @@ object GroupSystem {
         group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
         group.notInPending(index) -> some.err(ErrCode.ERR_GROUP_GET_DATA)
         group.isManager(uid) -> {
-          var tid = group.pending.getInteger(index)
+          var tid = group.pending.getLong(index)
           if (pass && group.notIn(tid)) {
             var jo = JsonObject()
             jo.put("id", tid)
@@ -181,7 +181,7 @@ object GroupSystem {
 
   fun promote(some: Some) {
     var gid = some.getUInt("gid")
-    var mid = some.getUInt("mid")
+    var mid = some.getULong("mid")
     var uid = some.userId
     GroupCache.getGroupById(gid) { group ->
       when {

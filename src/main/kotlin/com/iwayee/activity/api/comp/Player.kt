@@ -4,7 +4,7 @@ import com.iwayee.activity.define.SexType
 import io.vertx.core.json.JsonObject
 
 data class Player(
-        var id: Int = 0,
+        var id: Long = 0,
         var sex: Int = SexType.MALE.ordinal,
         var wx_nick: String = "",
         var nick: String = ""

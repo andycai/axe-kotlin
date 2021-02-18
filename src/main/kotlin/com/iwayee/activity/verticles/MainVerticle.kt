@@ -82,39 +82,39 @@ class MainVerticle: AbstractVerticle() {
     router?.route()?.handler(BodyHandler.create())
 
     // 用户
-    get("/users/:uid", UserSystem::getUser);
-    get("/users/your/groups", GroupSystem::getGroupsByUserId);
-    get("/users/your/activities", ActivitySystem::getActivitiesByUserId);
+    get("/users/:uid", UserSystem::getUser)
+    get("/users/your/groups", GroupSystem::getGroupsByUserId)
+    get("/users/your/activities", ActivitySystem::getActivitiesByUserId)
 
-    post("/login", UserSystem::login, false);
-    post("/login_wx", UserSystem::wxLogin, false);
-    post("/register", UserSystem::register, false);
-    post("/logout", UserSystem::logout);
+    post("/login", UserSystem::login, false)
+    post("/login_wx", UserSystem::wxLogin, false)
+    post("/register", UserSystem::register, false)
+    post("/logout", UserSystem::logout)
 
     // 群组
-    get("/groups/:gid", GroupSystem::getGroupById);
-    get("/groups", GroupSystem::getGroups);
-    get("/groups/:gid/pending", GroupSystem::getApplyList);
-    get("/groups/:gid/activities", ActivitySystem::getActivitiesByGroupId);
+    get("/groups/:gid", GroupSystem::getGroupById)
+    get("/groups", GroupSystem::getGroups)
+    get("/groups/:gid/pending", GroupSystem::getApplyList)
+    get("/groups/:gid/activities", ActivitySystem::getActivitiesByGroupId)
 
-    post("/groups", GroupSystem::create);
-    post("/groups/:gid/apply", GroupSystem::apply);
-    post("/groups/:gid/approve", GroupSystem::approve);
-    post("/groups/:gid/promote/:mid", GroupSystem::promote);
-    post("/groups/:gid/transfer/:mid", GroupSystem::transfer);
+    post("/groups", GroupSystem::create)
+    post("/groups/:gid/apply", GroupSystem::apply)
+    post("/groups/:gid/approve", GroupSystem::approve)
+    post("/groups/:gid/promote/:mid", GroupSystem::promote)
+    post("/groups/:gid/transfer/:mid", GroupSystem::transfer)
 
-    put("/groups/:gid", GroupSystem::updateGroup);
+    put("/groups/:gid", GroupSystem::updateGroup)
 
     // 活动
-    get("/activities/:aid", ActivitySystem::getActivityById);
-    get("/activities", ActivitySystem::getActivities);
+    get("/activities/:aid", ActivitySystem::getActivityById)
+    get("/activities", ActivitySystem::getActivities)
 
-    post("/activities", ActivitySystem::create);
-    post("/activities/:aid/end", ActivitySystem::end);
-    post("/activities/:aid/apply", ActivitySystem::apply);
-    post("/activities/:aid/cancel", ActivitySystem::cancel);
+    post("/activities", ActivitySystem::create)
+    post("/activities/:aid/end", ActivitySystem::end)
+    post("/activities/:aid/apply", ActivitySystem::apply)
+    post("/activities/:aid/cancel", ActivitySystem::cancel)
 
-    put("/activities/:aid", ActivitySystem::update);
+    put("/activities/:aid", ActivitySystem::update)
 
     Hub.config?.let {
       vertx

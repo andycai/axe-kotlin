@@ -41,8 +41,8 @@ object UserSystem {
             0L -> some.err(ErrCode.ERR_OP)
             else -> {
               var token = jo.getString("token")
-              UserCache.cacheSession(token, newId.toInt(), sex)
-              UserCache.getUserById(newId.toInt()) { user ->
+              UserCache.cacheSession(token, newId, sex)
+              UserCache.getUserById(newId) { user ->
                 user?.let {
                   some.ok(user2Json(user))
                 }?:let {
@@ -85,7 +85,7 @@ object UserSystem {
   }
 
   fun getUser(some: Some) {
-    var uid = some.getUInt("uid");
+    var uid = some.getULong("uid");
 
     UserCache.getUserById(uid) {
       it?.let {

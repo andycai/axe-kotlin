@@ -5,7 +5,7 @@
 DROP TABLE IF EXISTS `user`;
 CREATE TABLE `user`
 (
-    `id`         int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '用户ID',
+    `id`         bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '用户ID',
     `username`   varchar(128)     NOT NULL COMMENT '用户名',
     `password`   varchar(128)     NOT NULL DEFAULT '123456' COMMENT '密码',
     `scores`     int(11) unsigned NOT NULL DEFAULT 0 COMMENT '积分',
@@ -61,7 +61,7 @@ DROP TABLE IF EXISTS `activity`;
 CREATE TABLE `activity`
 (
     `id`         bigint(20) unsigned NOT NULL AUTO_INCREMENT COMMENT '活动ID',
-    `planner`    int(11) unsigned    NOT NULL COMMENT '组织者ID',
+    `planner`    bigint(20) unsigned    NOT NULL COMMENT '组织者ID',
     `group_id`   int(11) unsigned    NOT NULL DEFAULT 0 COMMENT '群组ID',
     `kind`       tinyint(4) unsigned NOT NULL DEFAULT 1 COMMENT '活动分类:1羽毛球,2篮球,3足球,4聚餐...',
     `type`       tinyint(2) unsigned NOT NULL DEFAULT 1 COMMENT '活动类型:1全局保护,2全局公开,3群组',

@@ -43,7 +43,7 @@ object ActivityDao : MyDao() {
     }
   }
 
-  fun getActivityById(id: Int, action: (JsonObject?) -> Unit) {
+  fun getActivityById(id: Long, action: (JsonObject?) -> Unit) {
     var fields = "`id`,`planner`,`group_id`,`kind`,`type`,`quota`,`title`,`remark`,`status`,`fee_type`,`fee_male`,`fee_female`,`queue`,`queue_sex`,`addr`,`ahead`,`begin_at`,`end_at`";
     var sql = "SELECT $fields FROM `activity` WHERE id = ?"
 
@@ -106,7 +106,7 @@ object ActivityDao : MyDao() {
     }
   }
 
-  fun updateActivityById(id: Int, activity: JsonObject, action: (Boolean) -> Unit) {
+  fun updateActivityById(id: Long, activity: JsonObject, action: (Boolean) -> Unit) {
     val fields = ("quota = ?, "
             + "title = ?, "
             + "remark = ?, "
@@ -148,7 +148,7 @@ object ActivityDao : MyDao() {
     }
   }
 
-  fun updateActivityStatus(id: Int, activity: JsonObject, action: (Boolean) -> Unit) {
+  fun updateActivityStatus(id: Long, activity: JsonObject, action: (Boolean) -> Unit) {
     val fields = (""
             + "status = ?, "
             + "fee_male = ?, "
