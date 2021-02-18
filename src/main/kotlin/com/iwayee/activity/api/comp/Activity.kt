@@ -97,7 +97,7 @@ data class Activity(
   }
 
   // 报名的人数超过候补的限制，避免乱报名，如带100000人报名
-  fun overQuota(uid: Long, total: Int): Boolean {
+  fun overQuota(total: Int): Boolean {
     return queue.size() + total - quota > OVERFLOW
   }
 

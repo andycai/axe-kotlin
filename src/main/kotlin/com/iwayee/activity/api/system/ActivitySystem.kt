@@ -290,7 +290,7 @@ object ActivitySystem {
     ActivityCache.getActivityById(aid) { activity ->
       when {
         activity == null -> some.err(ErrCode.ERR_ACTIVITY_NO_DATA)
-        activity.overQuota(uid, (maleCount + femaleCount)) -> some.err(ErrCode.ERR_ACTIVITY_OVER_QUOTA)
+        activity.overQuota((maleCount + femaleCount)) -> some.err(ErrCode.ERR_ACTIVITY_OVER_QUOTA)
         activity.inGroup() -> {
           GroupCache.getGroupById(activity.group_id) { group ->
             when {

@@ -194,6 +194,7 @@ object GroupSystem {
             }
           }
         }
+        group.managerCount() >= 3 -> some.err(ErrCode.ERR_GROUP_MANAGER_LIMIT)
         else -> some.err(ErrCode.ERR_GROUP_PROMOTE)
       }
     }

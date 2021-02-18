@@ -18,6 +18,7 @@ enum class ErrCode(errorCode: Int, errorDesc: String) {
   ERR_ACTIVITY_CANNOT_APPLY_NOT_IN_GROUP(-301, "你不是群组成员不能报名或取消报名群组活动！"),
   ERR_ACTIVITY_NO_DATA(-300, "找不活动数据！"),
 
+  ERR_GROUP_MANAGER_LIMIT(-206, "副群主数量超过限制，不能再委任！"),
   ERR_GROUP_APPROVE(-205, "入群审批失败！"),
   ERR_GROUP_GET_DATA(-204, "获取群数据失败！"),
   ERR_GROUP_UPDATE_OP(-203, "更新群信息失败！"),
