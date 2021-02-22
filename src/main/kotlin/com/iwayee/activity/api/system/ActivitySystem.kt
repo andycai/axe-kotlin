@@ -264,7 +264,7 @@ object ActivitySystem {
   // 移除报名队列的人
   fun remove(some: Some) {
     val aid = some.getULong("aid");
-    val index = some.getUInt("index");
+    val index = some.getInt("index");
     val uid = some.userId;
 
     ActivityCache.getActivityById(aid) { activity ->
@@ -352,17 +352,49 @@ object ActivitySystem {
 
   private fun enqueue(some: Some, uid: Long, act: Activity, maleCount: Int, femaleCount: Int) {
     act.enqueue(uid, maleCount, femaleCount)
-    saveData(some, act.id)
+    ActivityCache.syncToDB(act.id) { ok ->
+      when (ok) {
+        true -> {
+          UserSystem.applyActivity(some, act.id, uid) // 更新用户活动列表
+        }
+        else -> some.err(ErrCode.ERR_ACTIVITY_UPDATE)
+      }
+    }
   }
 
   private fun dequeue(some: Some, uid: Long, act: Activity, maleCount: Int, femaleCount: Int) {
     act.dequeue(uid, maleCount, femaleCount)
-    saveData(some, act.id)
+    ActivityCache.syncToDB(act.id) { ok ->
+      when (ok) {
+        true -> {
+          if (!act.inQueue(uid)) { // 全部报名都取消了
+            UserSystem.cancelActivity(some, act.id, uid) // 更新用户活动列表
+          } else {
+            some.succeed()
+          }
+        }
+        else -> some.err(ErrCode.ERR_ACTIVITY_UPDATE)
+      }
+    }
   }
 
   private fun dequeue(some: Some, act: Activity, index: Int) {
+    var uid = act.getIdFromQueue(index)
     when {
-      act.dequeue(index) -> saveData(some, act.id)
+      act.dequeue(index) -> {
+        ActivityCache.syncToDB(act.id) { ok ->
+          when (ok) {
+            true -> {
+              if (!act.inQueue(uid)) { // 全部报名都取消了
+                UserSystem.cancelActivity(some, act.id, uid) // 更新用户活动列表
+              } else {
+                some.succeed()
+              }
+            }
+            else -> some.err(ErrCode.ERR_ACTIVITY_UPDATE)
+          }
+        }
+      }
       else -> some.err(ErrCode.ERR_ACTIVITY_REMOVE)
     }
   }

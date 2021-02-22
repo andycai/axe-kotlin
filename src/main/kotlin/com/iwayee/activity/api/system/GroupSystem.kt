@@ -148,8 +148,8 @@ object GroupSystem {
     var gid = some.getUInt("gid")
     var pass = some.jsonBool("pass")
     var index = some.jsonInt("index")
-
     var uid = some.userId
+
     GroupCache.getGroupById(gid) { group ->
       when {
         group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
@@ -167,12 +167,16 @@ object GroupSystem {
                         .put("pos", GroupPosition.POS_MEMBER.ordinal)
                         .put("at", Date().time)
                 group.members.add(jo)
-                // TODO: 加入群组，更新用户的群组列表
               }
               group.pending.removeAt(index)
               GroupCache.syncToDB(group.id) {
                 when (it) {
-                  true -> some.succeed()
+                  true -> {
+                    if (pass) {
+                      // 加入群组，更新用户的群组列表
+                      UserSystem.enterGroup(some, gid, tid)
+                    }
+                  }
                   else -> some.err(ErrCode.ERR_GROUP_UPDATE_OP)
                 }
               }
@@ -193,14 +197,7 @@ object GroupSystem {
         !group.isOwner(uid) -> some.err(ErrCode.ERR_GROUP_NON_OWNER)
         !group.promote(mid) -> some.err(ErrCode.ERR_GROUP_PROMOTE)
         group.managerCount() >= 3 -> some.err(ErrCode.ERR_GROUP_MANAGER_LIMIT)
-        else -> {
-          GroupCache.syncToDB(group.id) {
-            when (it) {
-              true -> some.succeed()
-              else -> some.err(ErrCode.ERR_GROUP_UPDATE_OP)
-            }
-          }
-        }
+        else -> saveData(some, gid)
       }
     }
   }
@@ -228,8 +225,15 @@ object GroupSystem {
         group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
         !group.isManager(uid) -> some.err(ErrCode.ERR_GROUP_NON_MANAGER)
         !group.remove(mid) -> some.err(ErrCode.ERR_GROUP_REMOVE)
-        else -> saveData(some, gid)
-        // TODO:同时删除更新用户的群组列表
+        // 同时删除用户的群组列表数据
+        else -> {
+          GroupCache.syncToDB(gid) { ok ->
+            when (ok) {
+              true -> UserSystem.quitGroup(some, gid, mid)
+              else -> some.err(ErrCode.ERR_GROUP_UPDATE_OP)
+            }
+          }
+        }
       }
     }
   }
@@ -242,8 +246,15 @@ object GroupSystem {
         group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
         !group.isMember(uid) -> some.err(ErrCode.ERR_GROUP_NON_MEMBER)
         !group.remove(uid) -> some.err(ErrCode.ERR_GROUP_REMOVE)
-        else -> saveData(some, gid)
-        // TODO:同时删除更新用户的群组列表
+        // 同时删除用户的群组列表数据
+        else -> {
+          GroupCache.syncToDB(gid) { ok ->
+            when (ok) {
+              true -> UserSystem.quitGroup(some, gid, uid)
+              else -> some.err(ErrCode.ERR_GROUP_UPDATE_OP)
+            }
+          }
+        }
       }
     }
   }

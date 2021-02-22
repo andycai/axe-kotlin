@@ -116,6 +116,10 @@ data class Activity(
     return total > count
   }
 
+  fun inQueue(uid: Long): Boolean {
+    return queue.contains(uid)
+  }
+
   private fun fixQueue() {
     var sizeSex = queue_sex.size
     var size = queue.size
@@ -142,6 +146,13 @@ data class Activity(
       queue.add(uid)
       queue_sex.add(SexType.FEMALE.ordinal)
     }
+  }
+
+  fun getIdFromQueue(index: Int): Long {
+    if (index < 0 || index >= queue.size) {
+      return 0
+    }
+    return queue[index]
   }
 
   fun dequeue(index: Int): Boolean {

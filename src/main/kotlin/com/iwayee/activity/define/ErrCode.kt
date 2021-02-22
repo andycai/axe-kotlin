@@ -9,6 +9,7 @@ enum class ErrCode(errorCode: Int, errorDesc: String) {
   ERR_AUTH(-103, "登录验证失败，请重新登录！"),
   ERR_REGISTER(-104, "注册失败！"),
   ERR_USER_DATA(-105, "获取用户数据失败！"),
+  ERR_USER_UPDATE_DATA(-106, "获取用户数据失败！"),
 
   ERR_GROUP_MANAGER_LIMIT(-200, "副群主数量超过限制，不能再委任！"),
   ERR_GROUP_GET_DATA(-201, "获取群数据失败！"),

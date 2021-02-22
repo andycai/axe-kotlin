@@ -20,15 +20,31 @@ data class User(
         var groups: MutableList<Int> = mutableListOf(),
         var activities: MutableList<Long> = mutableListOf()
 ) {
+  fun containsActivity(aid: Long): Boolean {
+    return activities.contains(aid)
+  }
+
   fun addActivity(aid: Long) {
     if (!activities.contains(aid)) {
       activities.add(aid);
     }
   }
 
+  fun removeActivity(aid: Long) {
+    if (activities.contains(aid)) {
+      activities.remove(aid);
+    }
+  }
+
   fun addGroup(gid: Int) {
     if (!groups.contains(gid)) {
       groups.add(gid)
+    }
+  }
+
+  fun removeGroup(gid: Int) {
+    if (groups.contains(gid)) {
+      groups.remove(gid)
     }
   }
 }
