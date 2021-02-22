@@ -103,6 +103,7 @@ class MainVerticle: AbstractVerticle() {
     post("/groups/:gid/promote/:mid", GroupSystem::promote)
     post("/groups/:gid/transfer/:mid", GroupSystem::transfer)
     post("/groups/:gid/remove/:mid", GroupSystem::remove)
+    post("/groups/:gid/quit", GroupSystem::quit)
 
     put("/groups/:gid", GroupSystem::updateGroup)
 

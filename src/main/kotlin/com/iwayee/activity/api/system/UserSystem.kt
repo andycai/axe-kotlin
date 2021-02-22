@@ -16,9 +16,9 @@ object UserSystem {
   }
 
   fun login(some: Some) {
-    var name = some.jsonStr("username")
-    var wxNick = some.jsonStr("wx_nick")
-    var sex = some.jsonUInt("sex")
+    val name = some.jsonStr("username")
+    val wxNick = some.jsonStr("wx_nick")
+    val sex = some.jsonUInt("sex")
 
     UserCache.getUserByName(name) { it ->
       if (it == null) {
@@ -73,7 +73,7 @@ object UserSystem {
   }
 
   fun getUserByName(some: Some) {
-    var name = some.getStr("username");
+    val name = some.getStr("username");
 
     UserCache.getUserByName(name) {
       it?.let {
@@ -85,7 +85,7 @@ object UserSystem {
   }
 
   fun getUser(some: Some) {
-    var uid = some.getULong("uid");
+    val uid = some.getULong("uid");
 
     UserCache.getUserById(uid) {
       it?.let {

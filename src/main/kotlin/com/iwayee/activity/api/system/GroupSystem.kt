@@ -167,6 +167,7 @@ object GroupSystem {
                         .put("pos", GroupPosition.POS_MEMBER.ordinal)
                         .put("at", Date().time)
                 group.members.add(jo)
+                // TODO: 加入群组，更新用户的群组列表
               }
               group.pending.removeAt(index)
               GroupCache.syncToDB(group.id) {
@@ -228,6 +229,21 @@ object GroupSystem {
         !group.isManager(uid) -> some.err(ErrCode.ERR_GROUP_NON_MANAGER)
         !group.remove(mid) -> some.err(ErrCode.ERR_GROUP_REMOVE)
         else -> saveData(some, gid)
+        // TODO:同时删除更新用户的群组列表
+      }
+    }
+  }
+
+  fun quit(some: Some) {
+    val gid = some.getUInt("gid")
+    val uid = some.userId
+    GroupCache.getGroupById(gid) { group ->
+      when {
+        group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
+        !group.isMember(uid) -> some.err(ErrCode.ERR_GROUP_NON_MEMBER)
+        !group.remove(uid) -> some.err(ErrCode.ERR_GROUP_REMOVE)
+        else -> saveData(some, gid)
+        // TODO:同时删除更新用户的群组列表
       }
     }
   }
