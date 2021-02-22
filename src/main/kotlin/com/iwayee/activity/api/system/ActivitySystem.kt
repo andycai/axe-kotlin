@@ -215,6 +215,7 @@ object ActivitySystem {
       when {
         activity == null -> some.err(ErrCode.ERR_ACTIVITY_GET_DATA)
         activity.status > ActivityStatus.DOING.ordinal -> some.err(ErrCode.ERR_ACTIVITY_NON_DOING)
+        activity.hasBegun() -> some.err(ErrCode.ERR_ACTIVITY_HAS_BEGUN)
         activity.overQuota((maleCount + femaleCount)) -> some.err(ErrCode.ERR_ACTIVITY_OVER_QUOTA)
         activity.inGroup() -> {
           GroupCache.getGroupById(activity.group_id) { group ->

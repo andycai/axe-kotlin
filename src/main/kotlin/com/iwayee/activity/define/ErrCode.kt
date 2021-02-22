@@ -33,6 +33,7 @@ enum class ErrCode(errorCode: Int, errorDesc: String) {
   ERR_ACTIVITY_REMOVE(-308, "移除报名失败！"),
   ERR_ACTIVITY_NON_DOING(-309, "活动已经结束，不能再操作！"),
   ERR_ACTIVITY_CANNOT_CANCEL(-310, "取消报名的时间已过，不能取消报名！"),
+  ERR_ACTIVITY_HAS_BEGUN(-311, "活动已经开始，不能报名！"),
   ;
 
   var errorCode: Int = errorCode

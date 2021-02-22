@@ -151,6 +151,19 @@ data class Activity(
     }
   }
 
+  fun hasBegun(): Boolean {
+    val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+    val now = Date()
+    var h: Long = 0
+    try {
+      val begin = fmt.parse(begin_at)
+      h = getDiffHours(now, begin)
+    } catch (e: ParseException) {
+      e.printStackTrace()
+    }
+    return h <= 0
+  }
+
   fun canCancel(): Boolean {
     val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
     val now = Date()
