@@ -61,11 +61,6 @@ object UserCache : BaseCache() {
     return true
   }
 
-  private fun cacheUser(user: User) {
-    usersForId[user.id] = user
-    usersForName[user.username] = user
-  }
-
   fun toPlayer(usersMap: Map<Long, User>): JsonObject {
     var jo = JsonObject()
     usersMap?.forEach { (key, value) ->
@@ -183,4 +178,11 @@ object UserCache : BaseCache() {
       else -> action(false)
     }
   }
+
+  // 私有方法
+  private fun cacheUser(user: User) {
+    usersForId[user.id] = user
+    usersForName[user.username] = user
+  }
+
 }

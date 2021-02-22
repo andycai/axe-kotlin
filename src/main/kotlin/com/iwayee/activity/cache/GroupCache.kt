@@ -10,12 +10,6 @@ import java.util.*
 object GroupCache : BaseCache() {
   private var groups = mutableMapOf<Int, Group>()
 
-  private fun cache(group: Group) {
-    group?.let {
-      groups[it.id] = it
-    }
-  }
-
   fun create(jo: JsonObject, uid: Long, action: (Long) -> Unit) {
     var group = jo.mapTo(Group::class.java)
     var now = Date().time
@@ -115,6 +109,13 @@ object GroupCache : BaseCache() {
         }
       }
       else -> action(false)
+    }
+  }
+
+  // 私有方法
+  private fun cache(group: Group) {
+    group?.let {
+      groups[it.id] = it
     }
   }
 }

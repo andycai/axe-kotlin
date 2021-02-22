@@ -24,27 +24,35 @@ data class User(
     return activities.contains(aid)
   }
 
-  fun addActivity(aid: Long) {
+  fun addActivity(aid: Long): Boolean {
     if (!activities.contains(aid)) {
       activities.add(aid);
+      return true
     }
+    return false;
   }
 
-  fun removeActivity(aid: Long) {
+  fun removeActivity(aid: Long): Boolean {
     if (activities.contains(aid)) {
       activities.remove(aid);
+      return true
     }
+    return false
   }
 
-  fun addGroup(gid: Int) {
+  fun addGroup(gid: Int): Boolean {
     if (!groups.contains(gid)) {
       groups.add(gid)
+      return true
     }
+    return false
   }
 
-  fun removeGroup(gid: Int) {
+  fun removeGroup(gid: Int): Boolean {
     if (groups.contains(gid)) {
       groups.remove(gid)
+      return true
     }
+    return false
   }
 }

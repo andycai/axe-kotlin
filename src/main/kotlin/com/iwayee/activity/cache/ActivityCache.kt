@@ -8,12 +8,6 @@ import io.vertx.core.json.JsonObject
 object ActivityCache : BaseCache() {
   private var activities = mutableMapOf<Long, Activity>()
 
-  private fun cache(activity: Activity) {
-    activity?.let {
-      activities[it.id] = it
-    }
-  }
-
   fun create(jo: JsonObject, uid: Long, action: (Long) -> Unit) {
     ActivityDao.create(jo) { newId ->
       when {
@@ -110,6 +104,13 @@ object ActivityCache : BaseCache() {
         }
       }
       else -> action(false)
+    }
+  }
+
+  // 私有方法
+  private fun cache(activity: Activity) {
+    activity?.let {
+      activities[it.id] = it
     }
   }
 }

@@ -9,12 +9,6 @@ import io.vertx.core.json.JsonObject
 import io.vertx.ext.web.RoutingContext
 
 object UserSystem {
-  private fun user2Json(user: User): JsonObject {
-    var jo = JsonObject.mapFrom(user)
-    jo.remove("password")
-    return jo
-  }
-
   fun login(some: Some) {
     val name = some.jsonStr("username")
     val wxNick = some.jsonStr("wx_nick")
@@ -101,8 +95,10 @@ object UserSystem {
   fun enterGroup(some: Some, gid: Int, uid: Long) {
     UserCache.getUserById(uid) {
       it?.let {
-        it.addGroup(gid)
-        saveData(some, uid)
+        when {
+          it.addGroup(gid) -> saveData(some, uid)
+          else -> some.succeed()
+        }
       }?:let {
         some.err(ErrCode.ERR_USER_DATA)
       }
@@ -112,8 +108,10 @@ object UserSystem {
   fun quitGroup(some: Some, gid: Int, uid: Long) {
     UserCache.getUserById(uid) {
       it?.let {
-        it.removeGroup(gid)
-        saveData(some, uid)
+        when {
+          it.removeGroup(gid) -> saveData(some, uid)
+          else -> some.succeed()
+        }
       }?:let {
         some.err(ErrCode.ERR_USER_DATA)
       }
@@ -123,11 +121,9 @@ object UserSystem {
   fun applyActivity(some: Some, aid: Long, uid: Long) {
     UserCache.getUserById(uid) {
       it?.let {
-        if (it.containsActivity(aid)) {
-          some.succeed()
-        } else {
-          it.addActivity(aid)
-          saveData(some, uid)
+        when {
+          it.addActivity(aid) -> saveData(some, uid)
+          else -> some.succeed()
         }
       }?:let {
         some.err(ErrCode.ERR_USER_DATA)
@@ -138,8 +134,10 @@ object UserSystem {
   fun cancelActivity(some: Some, aid: Long, uid: Long) {
     UserCache.getUserById(uid) {
       it?.let {
-        it.removeActivity(aid)
-        saveData(some, uid)
+        when {
+          it.removeActivity(aid) -> saveData(some, uid)
+          else -> some.succeed()
+        }
       }?: some.err(ErrCode.ERR_USER_DATA)
     }
   }
@@ -152,5 +150,11 @@ object UserSystem {
         else -> some.err(ErrCode.ERR_USER_UPDATE_DATA)
       }
     }
+  }
+
+  private fun user2Json(user: User): JsonObject {
+    var jo = JsonObject.mapFrom(user)
+    jo.remove("password")
+    return jo
   }
 }

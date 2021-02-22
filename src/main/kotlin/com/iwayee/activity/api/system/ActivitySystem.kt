@@ -214,6 +214,7 @@ object ActivitySystem {
     ActivityCache.getActivityById(aid) { activity ->
       when {
         activity == null -> some.err(ErrCode.ERR_ACTIVITY_GET_DATA)
+        activity.status > ActivityStatus.DOING.ordinal -> some.err(ErrCode.ERR_ACTIVITY_NON_DOING)
         activity.overQuota((maleCount + femaleCount)) -> some.err(ErrCode.ERR_ACTIVITY_OVER_QUOTA)
         activity.inGroup() -> {
           GroupCache.getGroupById(activity.group_id) { group ->
@@ -246,6 +247,8 @@ object ActivitySystem {
     ActivityCache.getActivityById(aid) { activity ->
       when {
         activity == null -> some.err(ErrCode.ERR_ACTIVITY_GET_DATA)
+        activity.status > ActivityStatus.DOING.ordinal -> some.err(ErrCode.ERR_ACTIVITY_NON_DOING)
+        !activity.canCancel() -> some.err(ErrCode.ERR_ACTIVITY_CANNOT_CANCEL)
         activity.notEnough(uid, (maleCount + femaleCount)) -> some.err(ErrCode.ERR_ACTIVITY_NOT_ENOUGH)
         activity.inGroup() -> {
           GroupCache.getGroupById(activity.group_id) { group ->
@@ -288,7 +291,6 @@ object ActivitySystem {
       }
     }
   }
-
 
   // 私有方法
   private fun doCreate(some: Some, jo: JsonObject, uid: Long, group: Group?) {

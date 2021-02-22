@@ -1,8 +1,11 @@
 package com.iwayee.activity.api.comp
 
 import com.iwayee.activity.define.*
-import io.vertx.core.json.JsonArray
+import com.iwayee.activity.utils.DateUtils.getDiffHours
 import io.vertx.core.json.JsonObject
+import java.text.ParseException
+import java.text.SimpleDateFormat
+import java.util.*
 import kotlin.math.abs
 import kotlin.math.round
 
@@ -51,38 +54,6 @@ data class Activity(
     return jo
   }
 
-  private fun totalCount(): Int { // 最终确定报名人数
-    var c: Int
-    var size = queue.size
-    c = when {
-      quota >= size -> size
-      else -> quota
-    }
-    return c
-  }
-
-  private fun maleCount(): Int {
-    var c = 0
-    var count = totalCount()
-    for (i in 0 until count) {
-      if (queue_sex[i] == SexType.MALE.ordinal) {
-        c += 1
-      }
-    }
-    return c
-  }
-
-  private fun femaleCount(): Int {
-    var c = 0
-    var count = totalCount()
-    for (i in 0 until count) {
-      if (queue_sex[i] == SexType.FEMALE.ordinal) {
-        c += 1
-      }
-    }
-    return c
-  }
-
   fun settle(fee: Int) {
     status = if (fee > 0) ActivityStatus.DONE.ordinal else ActivityStatus.END.ordinal
     when (fee_type) {
@@ -118,22 +89,6 @@ data class Activity(
 
   fun inQueue(uid: Long): Boolean {
     return queue.contains(uid)
-  }
-
-  private fun fixQueue() {
-    var sizeSex = queue_sex.size
-    var size = queue.size
-    var df = sizeSex - size
-    if (df > 0) {
-      for (i in sizeSex-1 downTo sizeSex-df) {
-        queue_sex.removeAt(i)
-      }
-    }
-    if (df < 0) {
-      for (i in size-1 downTo size-(abs(df))) {
-        queue.removeAt(i)
-      }
-    }
   }
 
   fun enqueue(uid: Long, maleCount: Int, femaleCount: Int) {
@@ -193,6 +148,68 @@ data class Activity(
     for (i in 0 until total) {
       queue.removeAt(posArr[i])
       queue_sex.removeAt(posArr[i])
+    }
+  }
+
+  fun canCancel(): Boolean {
+    val fmt = SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss")
+    val now = Date()
+    var h: Long = 0
+    try {
+      val begin = fmt.parse(begin_at)
+      h = getDiffHours(now, begin)
+    } catch (e: ParseException) {
+      e.printStackTrace()
+    }
+    return h >= ahead
+  }
+
+  // 私有方法
+  private fun totalCount(): Int { // 最终确定报名人数
+    var c: Int
+    var size = queue.size
+    c = when {
+      quota >= size -> size
+      else -> quota
+    }
+    return c
+  }
+
+  private fun maleCount(): Int {
+    var c = 0
+    var count = totalCount()
+    for (i in 0 until count) {
+      if (queue_sex[i] == SexType.MALE.ordinal) {
+        c += 1
+      }
+    }
+    return c
+  }
+
+  private fun femaleCount(): Int {
+    var c = 0
+    var count = totalCount()
+    for (i in 0 until count) {
+      if (queue_sex[i] == SexType.FEMALE.ordinal) {
+        c += 1
+      }
+    }
+    return c
+  }
+
+  private fun fixQueue() {
+    var sizeSex = queue_sex.size
+    var size = queue.size
+    var df = sizeSex - size
+    if (df > 0) {
+      for (i in sizeSex-1 downTo sizeSex-df) {
+        queue_sex.removeAt(i)
+      }
+    }
+    if (df < 0) {
+      for (i in size-1 downTo size-(abs(df))) {
+        queue.removeAt(i)
+      }
     }
   }
 }

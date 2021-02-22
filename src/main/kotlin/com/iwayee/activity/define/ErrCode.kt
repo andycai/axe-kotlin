@@ -9,7 +9,7 @@ enum class ErrCode(errorCode: Int, errorDesc: String) {
   ERR_AUTH(-103, "登录验证失败，请重新登录！"),
   ERR_REGISTER(-104, "注册失败！"),
   ERR_USER_DATA(-105, "获取用户数据失败！"),
-  ERR_USER_UPDATE_DATA(-106, "获取用户数据失败！"),
+  ERR_USER_UPDATE_DATA(-106, "更新用户数据失败！"),
 
   ERR_GROUP_MANAGER_LIMIT(-200, "副群主数量超过限制，不能再委任！"),
   ERR_GROUP_GET_DATA(-201, "获取群数据失败！"),
@@ -30,7 +30,9 @@ enum class ErrCode(errorCode: Int, errorDesc: String) {
   ERR_ACTIVITY_FEE(-305, "选择活动前结算的活动，必须要填写费用！"),
   ERR_ACTIVITY_OVER_QUOTA(-306, "报名候补的数量超出限制，请稍后再报名！"),
   ERR_ACTIVITY_NOT_ENOUGH(-307, "取消报名的数量不正确！"),
-  ERR_ACTIVITY_REMOVE(-308, "移除报名失败！")
+  ERR_ACTIVITY_REMOVE(-308, "移除报名失败！"),
+  ERR_ACTIVITY_NON_DOING(-309, "活动已经结束，不能再操作！"),
+  ERR_ACTIVITY_CANNOT_CANCEL(-310, "取消报名的时间已过，不能取消报名！"),
   ;
 
   var errorCode: Int = errorCode
