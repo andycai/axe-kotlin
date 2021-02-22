@@ -51,11 +51,10 @@ object GroupSystem {
   fun getGroupsByUserId(some: Some) {
     UserCache.getUserById(some.userId) { user ->
       user?.let {
-        var ids: List<Int> = it.groups.list as List<Int>
-        GroupCache.getGroupsByIds(ids) { data ->
+        GroupCache.getGroupsByIds(it.groups) { data ->
           some.ok(data)
         }
-      }
+      }?:some.err(ErrCode.ERR_USER_DATA)
     }
   }
 
@@ -95,7 +94,7 @@ object GroupSystem {
             }
           }
         }
-        else -> some.err(ErrCode.ERR_GROUP_NOT_MANAGER)
+        else -> some.err(ErrCode.ERR_GROUP_NON_MANAGER)
       }
     }
   }
@@ -104,14 +103,13 @@ object GroupSystem {
     var gid = some.getUInt("gid")
     GroupCache.getGroupById(gid) { group ->
       when {
-        group == null || group.pending.isEmpty -> some.err(ErrCode.ERR_GROUP_GET_DATA)
+        group == null || group.pending.isEmpty() -> some.err(ErrCode.ERR_GROUP_GET_DATA)
         else -> {
-          var ids = group.pending.list as List<Long>
-          UserCache.getUsersByIds(ids) { users ->
+          UserCache.getUsersByIds(group.pending) { users ->
             var jr = JsonArray()
             for ((key, value) in users) {
               var jo = JsonObject()
-              var index = group.pending.list.indexOf(value.id)
+              var index = group.pending.indexOf(value.id)
               jo.put("id", value.id)
                       .put("nick", value.nick)
                       .put("wx_nick", value.wx_nick)
@@ -156,25 +154,30 @@ object GroupSystem {
       when {
         group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
         group.notInPending(index) -> some.err(ErrCode.ERR_GROUP_GET_DATA)
-        group.isManager(uid) -> {
-          var tid = group.pending.getLong(index)
-          if (pass && group.notIn(tid)) {
-            var jo = JsonObject()
-            jo.put("id", tid)
-                    .put("scores", 0)
-                    .put("pos", GroupPosition.POS_MEMBER.ordinal)
-                    .put("at", Date().time)
-            group.members.add(jo)
-          }
-          group.pending.remove(index)
-          GroupCache.syncToDB(group.id) {
-            when (it) {
-              true -> some.succeed()
-              else -> some.err(ErrCode.ERR_GROUP_UPDATE_OP)
+        !group.isManager(uid) -> some.err(ErrCode.ERR_GROUP_NON_MANAGER)
+        else -> {
+          var tid = group.pending[index]
+          when {
+            !group.notIn(tid) -> some.err(ErrCode.ERR_GROUP_APPROVE)
+            else -> {
+              if (pass) {
+                var jo = JsonObject()
+                jo.put("id", tid)
+                        .put("scores", 0)
+                        .put("pos", GroupPosition.POS_MEMBER.ordinal)
+                        .put("at", Date().time)
+                group.members.add(jo)
+              }
+              group.pending.removeAt(index)
+              GroupCache.syncToDB(group.id) {
+                when (it) {
+                  true -> some.succeed()
+                  else -> some.err(ErrCode.ERR_GROUP_UPDATE_OP)
+                }
+              }
             }
           }
         }
-        else -> some.err(ErrCode.ERR_GROUP_NOT_MANAGER)
       }
     }
   }
@@ -186,7 +189,10 @@ object GroupSystem {
     GroupCache.getGroupById(gid) { group ->
       when {
         group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
-        group.isOwner(uid) && group.promote(mid) -> {
+        !group.isOwner(uid) -> some.err(ErrCode.ERR_GROUP_NON_OWNER)
+        !group.promote(mid) -> some.err(ErrCode.ERR_GROUP_PROMOTE)
+        group.managerCount() >= 3 -> some.err(ErrCode.ERR_GROUP_MANAGER_LIMIT)
+        else -> {
           GroupCache.syncToDB(group.id) {
             when (it) {
               true -> some.succeed()
@@ -194,28 +200,44 @@ object GroupSystem {
             }
           }
         }
-        group.managerCount() >= 3 -> some.err(ErrCode.ERR_GROUP_MANAGER_LIMIT)
-        else -> some.err(ErrCode.ERR_GROUP_PROMOTE)
       }
     }
   }
 
   fun transfer(some: Some) {
-    var gid = some.getUInt("gid")
-    var mid = some.getUInt("mid")
-    var uid = some.userId
+    val gid = some.getUInt("gid")
+    val mid = some.getULong("mid")
+    val uid = some.userId
     GroupCache.getGroupById(gid) { group ->
       when {
         group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
-        group.isOwner(uid) && group.transfer(uid, mid) -> {
-          GroupCache.syncToDB(group.id) {
-            when (it) {
-              true -> some.succeed()
-              else -> some.err(ErrCode.ERR_GROUP_UPDATE_OP)
-            }
-          }
-        }
-        else -> some.err(ErrCode.ERR_GROUP_TRANSFER)
+        !group.isOwner(uid) -> some.err(ErrCode.ERR_GROUP_NON_OWNER)
+        !group.transfer(uid, mid) -> some.err(ErrCode.ERR_GROUP_TRANSFER)
+        else -> saveData(some, gid)
+      }
+    }
+  }
+
+  fun remove(some: Some) {
+    val gid = some.getUInt("gid")
+    val mid = some.getULong("mid")
+    val uid = some.userId
+    GroupCache.getGroupById(gid) { group ->
+      when {
+        group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
+        !group.isManager(uid) -> some.err(ErrCode.ERR_GROUP_NON_MANAGER)
+        !group.remove(mid) -> some.err(ErrCode.ERR_GROUP_REMOVE)
+        else -> saveData(some, gid)
+      }
+    }
+  }
+
+  // 私有方法
+  private fun saveData(some: Some, gid: Int) {
+    GroupCache.syncToDB(gid) { ok ->
+      when (ok) {
+        true -> some.succeed()
+        else -> some.err(ErrCode.ERR_GROUP_UPDATE_OP)
       }
     }
   }

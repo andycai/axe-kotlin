@@ -102,6 +102,7 @@ class MainVerticle: AbstractVerticle() {
     post("/groups/:gid/approve", GroupSystem::approve)
     post("/groups/:gid/promote/:mid", GroupSystem::promote)
     post("/groups/:gid/transfer/:mid", GroupSystem::transfer)
+    post("/groups/:gid/remove/:mid", GroupSystem::remove)
 
     put("/groups/:gid", GroupSystem::updateGroup)
 
@@ -113,6 +114,7 @@ class MainVerticle: AbstractVerticle() {
     post("/activities/:aid/end", ActivitySystem::end)
     post("/activities/:aid/apply", ActivitySystem::apply)
     post("/activities/:aid/cancel", ActivitySystem::cancel)
+    post("/activities/:aid/remove/:index", ActivitySystem::remove)
 
     put("/activities/:aid", ActivitySystem::update)
 

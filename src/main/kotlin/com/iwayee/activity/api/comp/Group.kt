@@ -12,9 +12,9 @@ data class Group(
         var logo: String = "",
         var notice: String = "",
         var addr: String = "",
-        var activities: JsonArray = JsonArray(),
+        var activities: MutableList<Long> = mutableListOf(),
         var members: JsonArray = JsonArray(),
-        var pending: JsonArray = JsonArray()
+        var pending: MutableList<Long> = mutableListOf()
 ) {
   fun toJson(): JsonObject {
     var jo = JsonObject()
@@ -27,7 +27,7 @@ data class Group(
   }
 
   fun notInPending(index: Int): Boolean {
-    return index < 0 || index >= pending.size()
+    return index < 0 || index >= pending.size
   }
 
   fun isMember(uid: Long): Boolean {
@@ -73,7 +73,7 @@ data class Group(
     return count
   }
 
-  fun addActivity(aid: Int) {
+  fun addActivity(aid: Long) {
     if (!activities.contains(aid)) {
       activities.add(aid)
     }
@@ -90,19 +90,31 @@ data class Group(
     return false
   }
 
-  fun transfer(uid: Long, mid: Int): Boolean {
+  fun transfer(uid: Long, mid: Long): Boolean {
     var b = false
     for (item in members) {
       val jo = item as JsonObject
       if (jo.getLong("id") == uid) {
         jo.put("pos", GroupPosition.POS_MEMBER.ordinal)
       }
-      if (jo.getInteger("id") == mid) {
+      if (jo.getLong("id") == mid) {
         jo.put("pos", GroupPosition.POS_OWNER.ordinal)
         b = true
       }
     }
     return b
+  }
+
+  fun remove(mid: Long): Boolean {
+    var it = members.iterator()
+    while (it.hasNext()) {
+      var jo = it.next() as JsonObject
+      if (jo.getLong("id") == mid) {
+        it.remove()
+        return true
+      }
+    }
+    return false
   }
 
   fun notIn(uid: Long): Boolean {

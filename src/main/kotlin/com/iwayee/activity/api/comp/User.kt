@@ -17,8 +17,8 @@ data class User(
         var phone: String = "",
         var email: String = "",
         var create_at: String = "",
-        var groups: JsonArray = JsonArray(),
-        var activities: JsonArray = JsonArray()
+        var groups: MutableList<Int> = mutableListOf(),
+        var activities: MutableList<Long> = mutableListOf()
 ) {
   fun addActivity(aid: Long) {
     if (!activities.contains(aid)) {

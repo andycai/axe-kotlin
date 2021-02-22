@@ -14,49 +14,10 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
 object ActivitySystem {
-  private fun doCreate(some: Some, jo: JsonObject, uid: Long, group: Group?) {
-    ActivityCache.create(jo, uid) { newId ->
-      when {
-        newId <= 0L -> some.err(ErrCode.ERR_ACTIVITY_CREATE)
-        else -> {
-          // 更新用户的活动列表
-          UserCache.getUserById(uid) { user ->
-            when (user) {
-              null -> some.err(ErrCode.ERR_ACTIVITY_CREATE)
-              else -> {
-                user.addActivity(newId)
-                UserCache.syncToDB(uid) { b ->
-                  when (b) {
-                    true -> {
-                      // 更新群组的活动列表
-                      when (group) {
-                        null -> some.ok(JsonObject().put("activity_id", newId))
-                        else -> {
-                          group.addActivity(newId.toInt())
-                          GroupCache.syncToDB(group.id) { b ->
-                            when (b) {
-                              true -> some.ok(JsonObject().put("activity_id", newId))
-                              else -> some.err(ErrCode.ERR_ACTIVITY_CREATE)
-                            }
-                          }
-                        }
-                      }
-                    }
-                    else -> some.err(ErrCode.ERR_ACTIVITY_CREATE)
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    }
-  }
-
   fun create(some: Some) {
-    var uid = some.userId // 通过 session 获取
-    var gid = some.jsonInt("group_id")
-    var feeType = some.jsonUInt("fee_type")
+    val uid = some.userId // 通过 session 获取
+    val gid = some.jsonInt("group_id")
+    val feeType = some.jsonUInt("fee_type")
     var jo = JsonObject()
     jo.put("planner", uid)
             .put("group_id", gid)
@@ -91,7 +52,7 @@ object ActivitySystem {
           when {
             group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
             group.isManager(uid) -> doCreate(some, jo, uid, group)
-            else -> some.err(ErrCode.ERR_GROUP_NOT_MANAGER)
+            else -> some.err(ErrCode.ERR_GROUP_NON_MANAGER)
           }
         }
       }
@@ -100,14 +61,13 @@ object ActivitySystem {
   }
 
   fun getActivitiesByUserId(some: Some) {
-    var uid = some.userId
+    val uid = some.userId
     UserCache.getUserById(uid) { user ->
       when {
         user == null -> some.err(ErrCode.ERR_DATA)
-        user.activities.isEmpty -> some.ok(JsonArray())
+        user.activities.isEmpty() -> some.ok(JsonArray())
         else -> {
-          var ids = user.activities.list as List<Long>
-          ActivityCache.getActivitiesByIds(ids) { acts ->
+          ActivityCache.getActivitiesByIds(user.activities) { acts ->
             var jr = JsonArray()
             for (item in acts) {
               jr.add((item as Activity).toJson())
@@ -120,15 +80,14 @@ object ActivitySystem {
   }
 
   fun getActivitiesByGroupId(some: Some) {
-    var gid = some.getUInt("gid")
+    val gid = some.getUInt("gid")
 
     GroupCache.getGroupById(gid) { group ->
       when {
         group == null -> some.err(ErrCode.ERR_DATA)
-        group.activities.isEmpty -> some.ok(JsonArray())
+        group.activities.isEmpty() -> some.ok(JsonArray())
         else -> {
-          var ids = group.activities.list as List<Long>
-          ActivityCache.getActivitiesByIds(ids) { acts ->
+          ActivityCache.getActivitiesByIds(group.activities) { acts ->
             var jr = JsonArray()
             for (item in acts) {
               jr.add((item as Activity).toJson())
@@ -141,10 +100,10 @@ object ActivitySystem {
   }
 
   fun getActivities(some: Some) {
-    var type = some.jsonUInt("type")
-    var status = some.jsonUInt("status")
-    var page = some.jsonUInt("page")
-    var num = some.jsonUInt("num")
+    val type = some.jsonUInt("type")
+    val status = some.jsonUInt("status")
+    val page = some.jsonUInt("page")
+    val num = some.jsonUInt("num")
 
     ActivityCache.getActivitiesByType(type, status, page, num) { acts ->
       var jr = JsonArray()
@@ -156,13 +115,12 @@ object ActivitySystem {
   }
 
   fun getActivityById(some: Some) {
-    var aid = some.getULong("aid")
+    val aid = some.getULong("aid")
     ActivityCache.getActivityById(aid) { activity ->
       when (activity) {
         null -> some.err(ErrCode.ERR_DATA)
         else -> {
-          var ids = activity.queue.list as List<Long>
-          UserCache.getUsersByIds(ids) { users ->
+          UserCache.getUsersByIds(activity.queue) { users ->
             when (users) {
               null -> some.err(ErrCode.ERR_DATA)
               else -> {
@@ -178,27 +136,18 @@ object ActivitySystem {
     }
   }
 
-  private fun doUpdate(some: Some, act: Activity) {
-    ActivityCache.syncToDB(act.id) { b ->
-      when (b) {
-        true -> some.succeed()
-        else -> some.err(ErrCode.ERR_ACTIVITY_UPDATE)
-      }
-    }
-  }
-
   fun update(some: Some) {
-    var aid = some.getULong("aid")
-    var quota = some.jsonUInt("quota")
-    var ahead = some.jsonUInt("ahead")
-    var feeMale = some.jsonInt("fee_male")
-    var feeFemale = some.jsonInt("fee_female")
-    var title = some.jsonStr("title")
-    var remark = some.jsonStr("remark")
-    var addr = some.jsonStr("addr")
-    var beginAt = some.jsonStr("begin_at")
-    var endAt = some.jsonStr("end_at")
-    var uid = some.userId
+    val aid = some.getULong("aid")
+    val quota = some.jsonUInt("quota")
+    val ahead = some.jsonUInt("ahead")
+    val feeMale = some.jsonInt("fee_male")
+    val feeFemale = some.jsonInt("fee_female")
+    val title = some.jsonStr("title")
+    val remark = some.jsonStr("remark")
+    val addr = some.jsonStr("addr")
+    val beginAt = some.jsonStr("begin_at")
+    val endAt = some.jsonStr("end_at")
+    val uid = some.userId
 
     ActivityCache.getActivityById(aid) { act ->
       act?.let { activity ->
@@ -216,18 +165,173 @@ object ActivitySystem {
             GroupCache.getGroupById(activity.group_id) { group ->
               when {
                 group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
-                group.isManager(uid) -> doUpdate(some, activity)
-                else -> some.err(ErrCode.ERR_GROUP_NOT_MANAGER)
+                !group.isManager(uid) -> some.err(ErrCode.ERR_GROUP_NON_MANAGER)
+                else -> doUpdate(some, activity)
               }
             }
           }
-          uid != activity.planner -> some.err(ErrCode.ERR_ACTIVITY_NOT_PLANNER)
+          !activity.isPlanner(uid) -> some.err(ErrCode.ERR_ACTIVITY_NON_PLANNER)
           else -> doUpdate(some, activity)
         }
       } ?: let {
-        some.err(ErrCode.ERR_ACTIVITY_NO_DATA)
+        some.err(ErrCode.ERR_ACTIVITY_GET_DATA)
       }
     }
+  }
+
+  fun end(some: Some) {
+    val aid = some.getULong("aid")
+    val fee = some.jsonInt("fee") // 单位：分
+    val uid = some.userId
+
+    ActivityCache.getActivityById(aid) { activity ->
+      when {
+        activity == null -> some.err(ErrCode.ERR_ACTIVITY_GET_DATA)
+        activity.inGroup() -> {
+          GroupCache.getGroupById(activity.group_id) { group ->
+            when {
+              group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
+              !group.isManager(uid) -> some.err(ErrCode.ERR_GROUP_NON_MANAGER)
+              else -> doEnd(some, fee, aid, activity)
+            }
+          }
+        }
+        !activity.isPlanner(uid) -> some.err(ErrCode.ERR_ACTIVITY_NON_PLANNER)
+        else -> doEnd(some, fee, aid, activity)
+      }
+    }
+  }
+
+  /**
+   * 报名，支持带多人报名
+   */
+  fun apply(some: Some) {
+    val aid = some.getULong("aid")
+    val uid = some.userId
+    val maleCount = some.jsonInt("male_count")
+    val femaleCount = some.jsonInt("female_count")
+
+    ActivityCache.getActivityById(aid) { activity ->
+      when {
+        activity == null -> some.err(ErrCode.ERR_ACTIVITY_GET_DATA)
+        activity.overQuota((maleCount + femaleCount)) -> some.err(ErrCode.ERR_ACTIVITY_OVER_QUOTA)
+        activity.inGroup() -> {
+          GroupCache.getGroupById(activity.group_id) { group ->
+            when {
+              group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
+              !group.isMember(uid) -> some.err(ErrCode.ERR_GROUP_NON_MEMBER)
+              else -> enqueue(some, uid, activity, maleCount, femaleCount)
+            }
+          }
+        }
+        else -> enqueue(some, uid, activity, maleCount, femaleCount)
+      }
+    }
+  }
+
+  /**
+   * 取消报名，支持取消自带的多人
+   */
+  fun cancel(some: Some) {
+    val aid = some.getULong("aid");
+    val uid = some.userId;
+    val maleCount = some.jsonInt("male_count");
+    val femaleCount = some.jsonInt("female_count");
+
+    if (maleCount + femaleCount <= 0) {
+      some.err(ErrCode.ERR_PARAM)
+      return
+    }
+
+    ActivityCache.getActivityById(aid) { activity ->
+      when {
+        activity == null -> some.err(ErrCode.ERR_ACTIVITY_GET_DATA)
+        activity.notEnough(uid, (maleCount + femaleCount)) -> some.err(ErrCode.ERR_ACTIVITY_NOT_ENOUGH)
+        activity.inGroup() -> {
+          GroupCache.getGroupById(activity.group_id) { group ->
+            when {
+              group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
+              !group.isMember(uid) -> some.err(ErrCode.ERR_GROUP_NON_MEMBER)
+              else -> dequeue(some, uid, activity, maleCount, femaleCount)
+            }
+          }
+        }
+        else -> dequeue(some, uid, activity, maleCount, femaleCount)
+      }
+    }
+  }
+
+  // 移除报名队列的人
+  fun remove(some: Some) {
+    val aid = some.getULong("aid");
+    val index = some.getUInt("index");
+    val uid = some.userId;
+
+    ActivityCache.getActivityById(aid) { activity ->
+      when {
+        activity == null -> some.err(ErrCode.ERR_ACTIVITY_GET_DATA)
+        activity.inGroup() -> {
+          GroupCache.getGroupById(activity.group_id) { group ->
+            when {
+              group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
+              !group.isManager(uid) -> some.err(ErrCode.ERR_GROUP_NON_MANAGER)
+              else -> dequeue(some, activity, index)
+            }
+          }
+        }
+        else -> {
+          when {
+            activity.isPlanner(uid) -> dequeue(some, activity, index)
+            else -> some.err(ErrCode.ERR_ACTIVITY_NON_PLANNER)
+          }
+        }
+      }
+    }
+  }
+
+
+  // 私有方法
+  private fun doCreate(some: Some, jo: JsonObject, uid: Long, group: Group?) {
+    ActivityCache.create(jo, uid) { newId ->
+      when {
+        newId <= 0L -> some.err(ErrCode.ERR_ACTIVITY_CREATE)
+        else -> {
+          // 更新用户的活动列表
+          UserCache.getUserById(uid) { user ->
+            when (user) {
+              null -> some.err(ErrCode.ERR_ACTIVITY_CREATE)
+              else -> {
+                user.addActivity(newId)
+                UserCache.syncToDB(uid) { ok ->
+                  when (ok) {
+                    true -> {
+                      // 更新群组的活动列表
+                      when (group) {
+                        null -> some.ok(JsonObject().put("activity_id", newId))
+                        else -> {
+                          group.addActivity(newId)
+                          GroupCache.syncToDB(group.id) { b ->
+                            when (b) {
+                              true -> some.ok(JsonObject().put("activity_id", newId))
+                              else -> some.err(ErrCode.ERR_ACTIVITY_CREATE)
+                            }
+                          }
+                        }
+                      }
+                    }
+                    else -> some.err(ErrCode.ERR_ACTIVITY_CREATE)
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  private fun doUpdate(some: Some, act: Activity) {
+    saveData(some, act.id)
   }
 
   private fun doEnd(some: Some, fee: Int, aid: Long, act: Activity) {
@@ -246,103 +350,28 @@ object ActivitySystem {
     }
   }
 
-  fun end(some: Some) {
-    var aid = some.getULong("aid")
-    var fee = some.jsonInt("fee") // 单位：分
-    var uid = some.userId
-
-    ActivityCache.getActivityById(aid) { activity ->
-      when {
-        activity == null -> some.err(ErrCode.ERR_ACTIVITY_NO_DATA)
-        activity.inGroup() -> {
-          GroupCache.getGroupById(activity.group_id) { group ->
-            when {
-              group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
-              group.isManager(uid) -> doEnd(some, fee, aid, activity)
-              else -> some.err(ErrCode.ERR_GROUP_NOT_MANAGER)
-            }
-          }
-        }
-        else -> doEnd(some, fee, aid, activity)
-      }
-    }
-  }
-
   private fun enqueue(some: Some, uid: Long, act: Activity, maleCount: Int, femaleCount: Int) {
     act.enqueue(uid, maleCount, femaleCount)
-    ActivityCache.syncToDB(act.id) { b ->
-      when (b) {
-        true -> some.succeed()
-        else -> some.err(ErrCode.ERR_ACTIVITY_UPDATE)
-      }
-    }
-  }
-
-  /**
-   * 报名，支持带多人报名
-   */
-  fun apply(some: Some) {
-    var aid = some.getULong("aid")
-    var uid = some.userId
-    var maleCount = some.jsonInt("male_count")
-    var femaleCount = some.jsonInt("female_count")
-
-    ActivityCache.getActivityById(aid) { activity ->
-      when {
-        activity == null -> some.err(ErrCode.ERR_ACTIVITY_NO_DATA)
-        activity.overQuota((maleCount + femaleCount)) -> some.err(ErrCode.ERR_ACTIVITY_OVER_QUOTA)
-        activity.inGroup() -> {
-          GroupCache.getGroupById(activity.group_id) { group ->
-            when {
-              group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
-              group.isMember(uid) -> enqueue(some, uid, activity, maleCount, femaleCount)
-              else -> some.err(ErrCode.ERR_ACTIVITY_CANNOT_APPLY_NOT_IN_GROUP)
-            }
-          }
-        }
-        else -> enqueue(some, uid, activity, maleCount, femaleCount)
-      }
-    }
+    saveData(some, act.id)
   }
 
   private fun dequeue(some: Some, uid: Long, act: Activity, maleCount: Int, femaleCount: Int) {
     act.dequeue(uid, maleCount, femaleCount)
-    ActivityCache.syncToDB(act.id) { b ->
-      when (b) {
-        true -> some.succeed()
-        else -> some.err(ErrCode.ERR_ACTIVITY_UPDATE)
-      }
+    saveData(some, act.id)
+  }
+
+  private fun dequeue(some: Some, act: Activity, index: Int) {
+    when {
+      act.dequeue(index) -> saveData(some, act.id)
+      else -> some.err(ErrCode.ERR_ACTIVITY_REMOVE)
     }
   }
 
-  /**
-   * 取消报名，支持取消自带的多人
-   */
-  fun cancel(some: Some) {
-    var aid = some.getULong("aid");
-    var uid = some.userId;
-    var maleCount = some.jsonInt("male_count");
-    var femaleCount = some.jsonInt("female_count");
-
-    if (maleCount + femaleCount <= 0) {
-      some.err(ErrCode.ERR_PARAM)
-      return
-    }
-
-    ActivityCache.getActivityById(aid) { activity ->
-      when {
-        activity == null -> some.err(ErrCode.ERR_ACTIVITY_NO_DATA)
-        activity.notEnough(uid, (maleCount + femaleCount)) -> some.err(ErrCode.ERR_ACTIVITY_NOT_ENOUGH)
-        activity.inGroup() -> {
-          GroupCache.getGroupById(activity.group_id) { group ->
-            when {
-              group == null -> some.err(ErrCode.ERR_GROUP_GET_DATA)
-              group.isMember(uid) -> dequeue(some, uid, activity, maleCount, femaleCount)
-              else -> some.err(ErrCode.ERR_ACTIVITY_CANNOT_APPLY_NOT_IN_GROUP)
-            }
-          }
-        }
-        else -> dequeue(some, uid, activity, maleCount, femaleCount)
+  private fun saveData(some: Some, aid: Long) {
+    ActivityCache.syncToDB(aid) { ok ->
+      when (ok) {
+        true -> some.succeed()
+        else -> some.err(ErrCode.ERR_ACTIVITY_UPDATE)
       }
     }
   }

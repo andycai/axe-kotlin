@@ -1,5 +1,6 @@
 package com.iwayee.activity.dao.mysql
 
+import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.mysqlclient.MySQLClient
 import io.vertx.sqlclient.Tuple
@@ -54,7 +55,7 @@ object UserDao : MyDao() {
         if (ar.succeeded()) {
           var rows = ar.result()
           for (row in rows) {
-            jo = row.toJson()
+            jo = toJo(row.toJson())
           }
         } else {
           println("Failure: ${ar.cause().message}")
@@ -74,7 +75,7 @@ object UserDao : MyDao() {
         if (ar.succeeded()) {
           var rows = ar.result()
           for (row in rows) {
-            jo = row.toJson()
+            jo = toJo(row.toJson())
           }
         } else {
           println("Failure: ${ar.cause().message}")
@@ -95,7 +96,7 @@ object UserDao : MyDao() {
           var rows = ar.result()
           jo = JsonObject()
           for (row in rows) {
-            jo.put(row.getInteger("id").toString(), row.toJson())
+            jo.put(row.getInteger("id").toString(), toJo(row.toJson()))
           }
         } else {
           println("Failure: ${ar.cause().message}")
@@ -135,5 +136,12 @@ object UserDao : MyDao() {
         action(ret)
       }
     }
+  }
+
+  // 私有方法
+  private fun toJo(jo: JsonObject): JsonObject {
+    jo.put("groups", JsonArray(jo.getString("groups")))
+    jo.put("activities", JsonArray(jo.getString("activities")))
+    return jo
   }
 }

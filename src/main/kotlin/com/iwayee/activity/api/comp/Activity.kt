@@ -23,8 +23,8 @@ data class Activity(
         var addr: String = "",
         var begin_at: String = "",
         var end_at: String = "",
-        var queue: JsonArray = JsonArray(), // 报名队列
-        var queue_sex: JsonArray = JsonArray() // 报名队列中的性别
+        var queue: MutableList<Long> = mutableListOf(), // 报名队列
+        var queue_sex: MutableList<Int> = mutableListOf() // 报名队列中的性别
 ) {
   companion object {
     const val OVERFLOW = 10
@@ -34,12 +34,16 @@ data class Activity(
     return group_id > 0
   }
 
+  fun isPlanner(uid: Long): Boolean {
+    return uid == planner
+  }
+
   fun toJson(): JsonObject {
     var jo = JsonObject()
     jo.put("id", id)
             .put("status", status)
             .put("quota", quota)
-            .put("count", queue.size())
+            .put("count", queue.size)
             .put("title", title)
             .put("remark", remark)
             .put("begin_at", begin_at)
@@ -49,7 +53,7 @@ data class Activity(
 
   private fun totalCount(): Int { // 最终确定报名人数
     var c: Int
-    var size = queue.size()
+    var size = queue.size
     c = when {
       quota >= size -> size
       else -> quota
@@ -61,7 +65,7 @@ data class Activity(
     var c = 0
     var count = totalCount()
     for (i in 0 until count) {
-      if (queue_sex.getInteger(i) == SexType.MALE.ordinal) {
+      if (queue_sex[i] == SexType.MALE.ordinal) {
         c += 1
       }
     }
@@ -72,7 +76,7 @@ data class Activity(
     var c = 0
     var count = totalCount()
     for (i in 0 until count) {
-      if (queue_sex.getInteger(i) == SexType.FEMALE.ordinal) {
+      if (queue_sex[i] == SexType.FEMALE.ordinal) {
         c += 1
       }
     }
@@ -98,14 +102,14 @@ data class Activity(
 
   // 报名的人数超过候补的限制，避免乱报名，如带100000人报名
   fun overQuota(total: Int): Boolean {
-    return queue.size() + total - quota > OVERFLOW
+    return queue.size + total - quota > OVERFLOW
   }
 
   // 要取消报名的数量超过已经报名的数量
   fun notEnough(uid: Long, total: Int): Boolean {
     var count = 0
     for (item in queue) {
-      if ((item as Long) == uid) {
+      if (item == uid) {
         count += 1
       }
     }
@@ -113,17 +117,17 @@ data class Activity(
   }
 
   private fun fixQueue() {
-    var sizeSex = queue_sex.size()
-    var size = queue.size()
+    var sizeSex = queue_sex.size
+    var size = queue.size
     var df = sizeSex - size
     if (df > 0) {
       for (i in sizeSex-1 downTo sizeSex-df) {
-        queue_sex.remove(i)
+        queue_sex.removeAt(i)
       }
     }
     if (df < 0) {
       for (i in size-1 downTo size-(abs(df))) {
-        queue.remove(i)
+        queue.removeAt(i)
       }
     }
   }
@@ -140,22 +144,32 @@ data class Activity(
     }
   }
 
+  fun dequeue(index: Int): Boolean {
+    fixQueue()
+    if (index < 0 || index >= queue.size) {
+      return false
+    }
+    queue.removeAt(index)
+    queue_sex.removeAt(index)
+    return true
+  }
+
   fun dequeue(uid: Long, maleCount: Int, femaleCount: Int) {
     fixQueue()
     var mCount = 0
     var fCount = 0
-    var size = queue.size()
+    var size = queue.size
     var posArr = mutableListOf<Int>()
     for (i in size-1 downTo 0) {
-      var id = queue.getLong(i)
+      var id = queue[i]
       if (id == uid) {
         // 男
-        if (queue_sex.getInteger(i) == SexType.MALE.ordinal && maleCount > mCount) {
+        if (queue_sex[i] == SexType.MALE.ordinal && maleCount > mCount) {
           mCount += 1
           posArr.add(i)
         }
         // 女
-        if (queue_sex.getInteger(i) == SexType.FEMALE.ordinal && femaleCount > fCount) {
+        if (queue_sex[i] == SexType.FEMALE.ordinal && femaleCount > fCount) {
           fCount += 1
           posArr.add(i)
         }
@@ -166,8 +180,8 @@ data class Activity(
     }
     var total = posArr.size
     for (i in 0 until total) {
-      queue.remove(posArr[i])
-      queue_sex.remove(posArr[i])
+      queue.removeAt(posArr[i])
+      queue_sex.removeAt(posArr[i])
     }
   }
 }

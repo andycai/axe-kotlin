@@ -25,8 +25,8 @@ object GroupCache : BaseCache() {
             .put("pos", GroupPosition.POS_OWNER.ordinal)
             .put("at", now)
     group.members = JsonArray().add(member)
-    group.pending = JsonArray()
-    group.activities = JsonArray()
+    group.pending = mutableListOf()
+    group.activities = mutableListOf()
     GroupDao.create(JsonObject.mapFrom(group)) {
       if (it > 0L) {
         group.id = it.toInt()

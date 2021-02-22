@@ -44,7 +44,7 @@ object GroupDao : MyDao() {
         if (ar.succeeded()) {
           var rows = ar.result()
           for (row in rows) {
-            jo = row.toJson()
+            jo = toJo(row.toJson())
           }
         } else {
           println("Failure: ${ar.cause().message}")
@@ -64,7 +64,7 @@ object GroupDao : MyDao() {
         if (ar.succeeded()) {
           var rows = ar.result()
           for (row in rows) {
-            jr.add(row.toJson())
+            jr.add(toJo(row.toJson()))
           }
         } else {
           println("Failure: ${ar.cause().message}")
@@ -84,7 +84,7 @@ object GroupDao : MyDao() {
         if (ar.succeeded()) {
           var rows = ar.result()
           for (row in rows) {
-            jr.add(row.toJson())
+            jr.add(toJo(row.toJson()))
           }
         } else {
           println("Failure: ${ar.cause().message}")
@@ -126,5 +126,12 @@ object GroupDao : MyDao() {
         action(ret)
       }
     }
+  }
+
+  // 私有方法
+  private fun toJo(jo: JsonObject): JsonObject {
+    jo.put("pending", JsonArray(jo.getString("pending")))
+    jo.put("activities", JsonArray(jo.getString("activities")))
+    return jo
   }
 }
