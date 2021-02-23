@@ -10,6 +10,7 @@ import com.iwayee.activity.define.ActivityFeeType
 import com.iwayee.activity.define.ActivityStatus
 import com.iwayee.activity.define.ErrCode
 import com.iwayee.activity.hub.Some
+import com.iwayee.activity.utils.CollectionUtils
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 
@@ -62,17 +63,26 @@ object ActivitySystem {
 
   fun getActivitiesByUserId(some: Some) {
     val uid = some.userId
+    val page = some.jsonUInt("page")
+    val num = some.jsonUInt("num")
+
     UserCache.getUserById(uid) { user ->
       when {
         user == null -> some.err(ErrCode.ERR_DATA)
         user.activities.isEmpty() -> some.ok(JsonArray())
         else -> {
-          ActivityCache.getActivitiesByIds(user.activities) { acts ->
-            var jr = JsonArray()
-            for (item in acts) {
-              jr.add((item as Activity).toJson())
+          var jr = JsonArray()
+          var ids = CollectionUtils.subLastList(user.activities, page, num)
+          when {
+            ids.isEmpty() -> some.ok(jr)
+            else -> {
+              ActivityCache.getActivitiesByIds(ids) { acts ->
+                for (item in acts) {
+                  jr.add((item as Activity).toJson())
+                }
+                some.ok(jr)
+              }
             }
-            some.ok(jr)
           }
         }
       }
@@ -81,18 +91,26 @@ object ActivitySystem {
 
   fun getActivitiesByGroupId(some: Some) {
     val gid = some.getUInt("gid")
+    val page = some.jsonUInt("page")
+    val num = some.jsonUInt("num")
 
     GroupCache.getGroupById(gid) { group ->
       when {
         group == null -> some.err(ErrCode.ERR_DATA)
         group.activities.isEmpty() -> some.ok(JsonArray())
         else -> {
-          ActivityCache.getActivitiesByIds(group.activities) { acts ->
-            var jr = JsonArray()
-            for (item in acts) {
-              jr.add((item as Activity).toJson())
+          var jr = JsonArray()
+          var ids = CollectionUtils.subLastList(group.activities, page, num)
+          when {
+            ids.isEmpty() -> some.ok(jr)
+            else -> {
+              ActivityCache.getActivitiesByIds(ids) { acts ->
+                for (item in acts) {
+                  jr.add((item as Activity).toJson())
+                }
+                some.ok(jr)
+              }
             }
-            some.ok(jr)
           }
         }
       }

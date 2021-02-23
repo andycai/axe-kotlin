@@ -6,6 +6,7 @@ import com.iwayee.activity.dao.mysql.GroupDao
 import com.iwayee.activity.define.ErrCode
 import com.iwayee.activity.define.GroupPosition
 import com.iwayee.activity.hub.Some
+import com.iwayee.activity.utils.CollectionUtils
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import java.util.*
@@ -40,8 +41,8 @@ object GroupSystem {
   }
 
   fun getGroups(some: Some) {
-    var page = some.jsonUInt("page")
-    var num = some.jsonUInt("num")
+    val page = some.jsonUInt("page")
+    val num = some.jsonUInt("num")
 
     GroupCache.getGroups(page, num) {
       some.ok(it)
@@ -49,10 +50,20 @@ object GroupSystem {
   }
 
   fun getGroupsByUserId(some: Some) {
+    val page = some.jsonUInt("page")
+    val num = some.jsonUInt("num")
+
     UserCache.getUserById(some.userId) { user ->
       user?.let {
-        GroupCache.getGroupsByIds(it.groups) { data ->
-          some.ok(data)
+        var jr = JsonArray()
+        var ids = CollectionUtils.subLastList(it.groups, page, num)
+        when {
+          ids.isEmpty() -> some.ok(jr)
+          else -> {
+            GroupCache.getGroupsByIds(it.groups) { data ->
+              some.ok(data)
+            }
+          }
         }
       }?:some.err(ErrCode.ERR_USER_DATA)
     }
