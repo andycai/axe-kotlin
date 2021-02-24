@@ -4,9 +4,11 @@ import com.iwayee.activity.api.comp.Activity
 import com.iwayee.activity.dao.mysql.ActivityDao
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import org.slf4j.LoggerFactory
 
 object ActivityCache : BaseCache() {
   private var activities = mutableMapOf<Long, Activity>()
+  private val LOG = LoggerFactory.getLogger(ActivityCache::class.java)
 
   fun create(jo: JsonObject, uid: Long, action: (Long) -> Unit) {
     ActivityDao.create(jo) { newId ->
@@ -24,10 +26,10 @@ object ActivityCache : BaseCache() {
 
   fun getActivityById(id: Long, action: (Activity?) -> Unit) {
     if (activities.containsKey(id)) {
-      println("获取活动数据（缓存）: $id")
+      LOG.info("获取活动数据（缓存）: $id")
       action(activities[id])
     } else {
-      println("获取活动数据（DB)：$id")
+      LOG.info("获取活动数据（DB)：$id")
       ActivityDao.getActivityById(id) {
         it?.let {
           var activity = it.mapTo(Activity::class.java)
@@ -58,12 +60,12 @@ object ActivityCache : BaseCache() {
       }
     }
 
-    println("获取活动数据（缓存）：${jr.encode()}")
+    LOG.info("获取活动数据（缓存）：${jr.encode()}")
     when {
       idsForDB.isEmpty() -> action(jr)
       else -> {
         var idStr = joiner.join(idsForDB)
-        println("获取活动数据（DB）：$idStr")
+        LOG.info("获取活动数据（DB）：$idStr")
         ActivityDao.getActivitiesByIds(idStr) {
           it?.forEach { entry ->
             var jo = entry as JsonObject

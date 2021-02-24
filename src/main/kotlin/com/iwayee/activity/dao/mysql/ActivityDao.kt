@@ -4,8 +4,11 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.mysqlclient.MySQLClient
 import io.vertx.sqlclient.Tuple
+import org.slf4j.LoggerFactory
 
 object ActivityDao : MyDao() {
+  private val LOG = LoggerFactory.getLogger(ActivityDao::class.java)
+
   fun create(act: JsonObject, action: (Long) -> Unit) {
     var fields = "planner,group_id,kind,type,quota,title,`remark`,status,fee_type,fee_male,fee_female,queue,queue_sex,addr,ahead,begin_at,end_at";
     var sql = "INSERT INTO `activity` ($fields) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)"
@@ -34,9 +37,9 @@ object ActivityDao : MyDao() {
         if (ar.succeeded()) {
           var rows = ar.result()
           lastInsertId = rows.property(MySQLClient.LAST_INSERTED_ID)
-          println("Last Insert Id: $lastInsertId")
+          LOG.info("Last Insert Id: $lastInsertId")
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(lastInsertId)
       }
@@ -56,7 +59,7 @@ object ActivityDao : MyDao() {
             jo = toJo(row.toJson())
           }
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(jo)
       }
@@ -79,7 +82,7 @@ object ActivityDao : MyDao() {
             jr.add(toJo(row.toJson()))
           }
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(jr)
       }
@@ -99,7 +102,7 @@ object ActivityDao : MyDao() {
             jr.add(toJo(row.toJson()))
           }
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(jr)
       }
@@ -141,7 +144,7 @@ object ActivityDao : MyDao() {
         if (ar.succeeded()) {
           ret = true
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(ret)
       }
@@ -167,7 +170,7 @@ object ActivityDao : MyDao() {
         if (ar.succeeded()) {
           ret = true
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(ret)
       }

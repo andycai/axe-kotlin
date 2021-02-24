@@ -4,8 +4,11 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.mysqlclient.MySQLClient
 import io.vertx.sqlclient.Tuple
+import org.slf4j.LoggerFactory
 
 object UserDao : MyDao() {
+  private val LOG = LoggerFactory.getLogger(UserDao::class.java)
+
   fun create(user: JsonObject, action: (Long) -> Unit) {
     var fields = "username,password,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups";
     var sql = "INSERT INTO user ($fields) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)"
@@ -36,9 +39,9 @@ object UserDao : MyDao() {
         if (ar.succeeded()) {
           var rows = ar.result()
           lastInsertId = rows.property(MySQLClient.LAST_INSERTED_ID)
-          println("Last Insert Id: $lastInsertId")
+          LOG.info("Last Insert Id: $lastInsertId")
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(lastInsertId)
       }
@@ -58,7 +61,7 @@ object UserDao : MyDao() {
             jo = toJo(row.toJson())
           }
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(jo)
       }
@@ -78,7 +81,7 @@ object UserDao : MyDao() {
             jo = toJo(row.toJson())
           }
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(jo)
       }
@@ -99,7 +102,7 @@ object UserDao : MyDao() {
             jo.put(row.getInteger("id").toString(), toJo(row.toJson()))
           }
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(jo)
       }
@@ -131,7 +134,7 @@ object UserDao : MyDao() {
         if (ar.succeeded()) {
           ret = true
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(ret)
       }

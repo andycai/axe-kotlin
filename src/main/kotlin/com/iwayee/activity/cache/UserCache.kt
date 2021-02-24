@@ -7,12 +7,14 @@ import com.iwayee.activity.api.comp.User
 import com.iwayee.activity.dao.mysql.UserDao
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import org.slf4j.LoggerFactory
 import java.util.*
 
 object UserCache : BaseCache() {
   private var usersForName = mutableMapOf<String, User>()
   private var usersForId = mutableMapOf<Long, User>()
   private var sessions = mutableMapOf<String, Session>()
+  private val LOG = LoggerFactory.getLogger(UserCache::class.java)
 
   fun cacheSession(token: String, uid: Long, sex: Int) {
     var session: Session? = null
@@ -96,12 +98,12 @@ object UserCache : BaseCache() {
 
   fun getUserByName(name: String, action: (User?) -> Unit) {
     if (usersForName.containsKey(name)) {
-      println("获取用户数据（缓存）: $name")
+      LOG.info("获取用户数据（缓存）: $name")
       usersForName[name]?.let {
         action(it)
       }
     } else {
-      println("获取用户数据（DB)：$name")
+      LOG.info("获取用户数据（DB)：$name")
       UserDao.getUserByName(name) {
         it?.let {
           var user = it.mapTo(User::class.java)
@@ -114,10 +116,10 @@ object UserCache : BaseCache() {
 
   fun getUserById(id: Long, action: (User?) -> Unit) {
     if (usersForId.containsKey(id)) {
-      println("获取用户数据（缓存）: $id")
+      LOG.info("获取用户数据（缓存）: $id")
       action(usersForId[id])
     } else {
-      println("获取用户数据（DB)：$id")
+      LOG.info("获取用户数据（DB)：$id")
       UserDao.getUserById(id) {
         it?.let {
           var user = it.mapTo(User::class.java)
@@ -148,12 +150,12 @@ object UserCache : BaseCache() {
       }
     }
 
-    println("获取用户数据（缓存）：$itemMap")
+    LOG.info("获取用户数据（缓存）：$itemMap")
     when {
       idsForDB.isEmpty() -> action(itemMap)
       else -> {
         var idStr = joiner.join(idsForDB)
-        println("获取用户数据（DB）：$idStr")
+        LOG.info("获取用户数据（DB）：$idStr")
         UserDao.getUserByIds(idStr) {
           it?.forEach { entry ->
             var jo = entry.value as JsonObject

@@ -5,10 +5,12 @@ import com.iwayee.activity.dao.mysql.GroupDao
 import com.iwayee.activity.define.GroupPosition
 import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
+import org.slf4j.LoggerFactory
 import java.util.*
 
 object GroupCache : BaseCache() {
   private var groups = mutableMapOf<Int, Group>()
+  private val LOG = LoggerFactory.getLogger(GroupCache::class.java)
 
   fun create(jo: JsonObject, uid: Long, action: (Long) -> Unit) {
     var group = jo.mapTo(Group::class.java)
@@ -32,10 +34,10 @@ object GroupCache : BaseCache() {
 
   fun getGroupById(id: Int, action: (Group?) -> Unit) {
     if (groups.containsKey(id)) {
-      println("获取群组数据（缓存）: $id")
+      LOG.info("获取群组数据（缓存）: $id")
       action(groups[id])
     } else {
-      println("获取群组数据（DB)：$id")
+      LOG.info("获取群组数据（DB)：$id")
       GroupDao.getGroupById(id) {
         it?.let {
           var group = it.mapTo(Group::class.java)
@@ -66,12 +68,12 @@ object GroupCache : BaseCache() {
       }
     }
 
-    println("获取群组数据（缓存）：${jr.encode()}")
+    LOG.info("获取群组数据（缓存）：${jr.encode()}")
     when {
       idsForDB.isEmpty() -> action(jr)
       else -> {
         var idStr = joiner.join(idsForDB)
-        println("获取群组数据（DB）：$idStr")
+        LOG.info("获取群组数据（DB）：$idStr")
         GroupDao.getGroupsByIds(idStr) {
           it?.forEach { entry ->
             var jo = entry as JsonObject

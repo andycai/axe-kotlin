@@ -4,8 +4,11 @@ import io.vertx.core.json.JsonArray
 import io.vertx.core.json.JsonObject
 import io.vertx.mysqlclient.MySQLClient
 import io.vertx.sqlclient.Tuple
+import org.slf4j.LoggerFactory
 
 object GroupDao : MyDao() {
+  private val LOG = LoggerFactory.getLogger(GroupDao::class.java)
+
   fun create(group: JsonObject, action: (Long) -> Unit) {
     var fields = "`level`,`name`,`members`,`activities`,`pending`,`notice`,`addr`,`logo`";
     var sql = "INSERT INTO `group` ($fields) VALUES (?,?,?,?,?,?,?,?)"
@@ -25,9 +28,9 @@ object GroupDao : MyDao() {
         if (ar.succeeded()) {
           var rows = ar.result()
           lastInsertId = rows.property(MySQLClient.LAST_INSERTED_ID)
-          println("Last Insert Id: $lastInsertId")
+          LOG.info("Last Insert Id: $lastInsertId")
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(lastInsertId)
       }
@@ -47,7 +50,7 @@ object GroupDao : MyDao() {
             jo = toJo(row.toJson())
           }
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(jo)
       }
@@ -67,7 +70,7 @@ object GroupDao : MyDao() {
             jr.add(toJo(row.toJson()))
           }
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(jr)
       }
@@ -87,7 +90,7 @@ object GroupDao : MyDao() {
             jr.add(toJo(row.toJson()))
           }
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(jr)
       }
@@ -121,7 +124,7 @@ object GroupDao : MyDao() {
         if (ar.succeeded()) {
           ret = true
         } else {
-          println("Failure: ${ar.cause().message}")
+          LOG.info("Failure: ${ar.cause().message}")
         }
         action(ret)
       }
