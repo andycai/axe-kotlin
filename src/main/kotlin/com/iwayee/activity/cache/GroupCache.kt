@@ -43,7 +43,7 @@ object GroupCache : BaseCache() {
           var group = it.mapTo(Group::class.java)
           cache(group)
           action(group)
-        }?: action(null)
+        }
       }
     }
   }

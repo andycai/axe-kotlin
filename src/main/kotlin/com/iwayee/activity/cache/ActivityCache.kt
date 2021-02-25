@@ -35,7 +35,7 @@ object ActivityCache : BaseCache() {
           var activity = it.mapTo(Activity::class.java)
           cache(activity)
           action(activity)
-        }?: action(null)
+        }
       }
     }
   }

@@ -21,91 +21,93 @@ object UserDao : MyDao() {
     //      ))
 
     client?.let {
-      it.preparedQuery(sql).execute(Tuple.of(
-              user.getString("username"),
-              user.getString("password"),
-              user.getString("token"),
-              user.getString("nick"),
-              user.getString("wx_token"),
-              user.getString("wx_nick"),
-              user.getInteger("sex"),
-              user.getString("phone"),
-              user.getString("email"),
-              user.getString("ip"),
-              user.getString("activities"),
-              user.getString("groups")
-      )) { ar ->
-        var lastInsertId = 0L
-        if (ar.succeeded()) {
-          var rows = ar.result()
-          lastInsertId = rows.property(MySQLClient.LAST_INSERTED_ID)
-          LOG.info("Last Insert Id: $lastInsertId")
-        } else {
-          LOG.info("Failure: ${ar.cause().message}")
-        }
-        action(lastInsertId)
-      }
+      it.preparedQuery(sql)
+              .execute(Tuple.of(
+                      user.getString("username"),
+                      user.getString("password"),
+                      user.getString("token"),
+                      user.getString("nick"),
+                      user.getString("wx_token"),
+                      user.getString("wx_nick"),
+                      user.getInteger("sex"),
+                      user.getString("phone"),
+                      user.getString("email"),
+                      user.getString("ip"),
+                      user.getString("activities"),
+                      user.getString("groups")
+              ))
+              .onSuccess { rows ->
+                val lastInsertId = rows.property(MySQLClient.LAST_INSERTED_ID)
+                LOG.info("Last Insert Id: $lastInsertId")
+                action(lastInsertId)
+              }
+              .onFailure { th ->
+                LOG.info("Failure: ${th.message}")
+                action(0)
+              }
     }
   }
 
-  fun getUserById(id: Long, action: (JsonObject?) -> Unit) {
+  fun getUserById(id: Long, action: (JsonObject) -> Unit) {
     var fields = "id,scores,username,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups,create_at";
     var sql = "SELECT $fields FROM `user` WHERE id = ?"
 
     client?.let {
-      it.preparedQuery(sql).execute(Tuple.of(id)) { ar ->
-        var jo: JsonObject? = null
-        if (ar.succeeded()) {
-          var rows = ar.result()
-          for (row in rows) {
-            jo = toJo(row.toJson())
-          }
-        } else {
-          LOG.info("Failure: ${ar.cause().message}")
-        }
-        action(jo)
-      }
+      it.preparedQuery(sql)
+              .execute(Tuple.of(id))
+              .onSuccess { rows ->
+                var jo = JsonObject()
+                for (row in rows) {
+                  jo = toJo(row.toJson())
+                }
+                action(jo)
+              }
+              .onFailure { th ->
+                LOG.info("Failure: ${th.message}")
+                action(JsonObject())
+              }
     }
   }
 
-  fun getUserByName(username: String, action: (JsonObject?) -> Unit) {
+  fun getUserByName(username: String, action: (JsonObject) -> Unit) {
     var fields = "id,scores,username,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups,create_at";
     var sql = "SELECT $fields FROM `user` WHERE username = ?"
 
     client?.let {
-      it.preparedQuery(sql).execute(Tuple.of(username)) { ar ->
-        var jo: JsonObject? = null
-        if (ar.succeeded()) {
-          var rows = ar.result()
-          for (row in rows) {
-            jo = toJo(row.toJson())
-          }
-        } else {
-          LOG.info("Failure: ${ar.cause().message}")
-        }
-        action(jo)
-      }
+      it.preparedQuery(sql)
+              .execute(Tuple.of(username))
+              .onSuccess { rows ->
+                var jo = JsonObject()
+                for (row in rows) {
+                  jo = toJo(row.toJson())
+                }
+                action(jo)
+              }
+              .onFailure { th ->
+                LOG.info("Failure: ${th.message}")
+                action(JsonObject())
+              }
     }
   }
 
-  fun getUserByIds(ids: String, action: (JsonObject?) -> Unit) {
+  fun getUserByIds(ids: String, action: (JsonObject) -> Unit) {
     var fields = "id,scores,username,token,nick,wx_token,wx_nick,sex,phone,email,ip,activities,groups";
     var sql = "SELECT $fields FROM `user` WHERE id IN($ids)"
 
     client?.let {
-      it.preparedQuery(sql).execute { ar ->
-        var jo: JsonObject? = null
-        if (ar.succeeded()) {
-          var rows = ar.result()
-          jo = JsonObject()
-          for (row in rows) {
-            jo.put(row.getInteger("id").toString(), toJo(row.toJson()))
-          }
-        } else {
-          LOG.info("Failure: ${ar.cause().message}")
-        }
-        action(jo)
-      }
+      it.preparedQuery(sql)
+              .execute()
+              .onSuccess { rows ->
+                var jo = JsonObject()
+                for (row in rows) {
+                  jo.put(row.getInteger("id").toString(), toJo(row.toJson()))
+                }
+                action(jo)
+              }
+              .onFailure { th ->
+                LOG.info("Failure: ${th.message}")
+                action(JsonObject())
+              }
     }
   }
 
@@ -120,24 +122,24 @@ object UserDao : MyDao() {
     var sql = "UPDATE `user` SET $fields WHERE id = ?"
 
     client?.let {
-      it.preparedQuery(sql).execute(Tuple.of(
-              user.getString("nick"),
-              user.getString("wx_nick"),
-              user.getString("token"),
-              user.getString("wx_token"),
-              user.getString("ip"),
-              user.getJsonArray("groups").encode(),
-              user.getJsonArray("activities").encode(),
-              id
-      )) { ar ->
-        var ret = false
-        if (ar.succeeded()) {
-          ret = true
-        } else {
-          LOG.info("Failure: ${ar.cause().message}")
-        }
-        action(ret)
-      }
+      it.preparedQuery(sql)
+              .execute(Tuple.of(
+                      user.getString("nick"),
+                      user.getString("wx_nick"),
+                      user.getString("token"),
+                      user.getString("wx_token"),
+                      user.getString("ip"),
+                      user.getJsonArray("groups").encode(),
+                      user.getJsonArray("activities").encode(),
+                      id
+              ))
+              .onSuccess{
+                action(true)
+              }
+              .onFailure { th ->
+                LOG.info("Failure: ${th.message}")
+                action(false)
+              }
     }
   }
 

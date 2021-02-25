@@ -109,7 +109,7 @@ object UserCache : BaseCache() {
           var user = it.mapTo(User::class.java)
           cacheUser(user)
           action(user)
-        }?: action(null)
+        }
       }
     }
   }
@@ -125,7 +125,7 @@ object UserCache : BaseCache() {
           var user = it.mapTo(User::class.java)
           cacheUser(user)
           action(user)
-        }?: action(null)
+        }
       }
     }
   }
